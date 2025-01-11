@@ -16,6 +16,7 @@ import {Constants} from "../../constants";
 import {assetMenu} from "../../menus/protyle";
 import {previewImage} from "../preview/image";
 import {Menu} from "../../plugin/Menu";
+import {escapeHtml} from "../../util/escape";
 
 const bgs = [
     "background:radial-gradient(black 3px, transparent 4px),radial-gradient(black 3px, transparent 4px),linear-gradient(#fff 4px, transparent 0),linear-gradient(45deg, transparent 74px, transparent 75px, #a4a4a4 75px, #a4a4a4 76px, transparent 77px, transparent 109px),linear-gradient(-45deg, transparent 75px, transparent 76px, #a4a4a4 76px, #a4a4a4 77px, transparent 78px, transparent 109px),#fff;background-size: 109px 109px, 109px 109px,100% 6px, 109px 109px, 109px 109px;background-position: 54px 55px, 0px 0px, 0px 0px, 0px 0px, 0px 0px;",
@@ -124,7 +125,7 @@ export class Background {
 </div>
 <div class="protyle-background__ia">
     <div class="protyle-background__icon" data-menu="true" data-type="open-emoji"></div>
-    <div class="b3-chips fn__none"></div>
+    <div class="b3-chips b3-chips__doctag fn__none"></div>
     <div class="protyle-background__action">
         <button class="b3-button b3-button--cancel" data-menu="true" data-type="tag">
             <svg><use xlink:href="#iconTags"></use></svg>
@@ -217,11 +218,11 @@ export class Background {
                     const imgSrc = target.getAttribute("src");
                     if (event.detail > 1 && !imgSrc.startsWith("data:image/png;base64")) {
                         previewImage(imgSrc);
+                        event.preventDefault();
+                        event.stopPropagation();
                     }
                     // 点击题头图菜单无法消失
                     window.siyuan.menus.menu.remove();
-                    event.preventDefault();
-                    event.stopPropagation();
                     break;
                 } else if (type === "position") {
                     const iconElements = this.element.firstElementChild.querySelectorAll(".protyle-icons");
@@ -258,7 +259,7 @@ export class Background {
                         y: rect.bottom,
                         h: rect.height,
                         w: rect.width
-                    });
+                    }, undefined, target.querySelector("img"));
                     event.preventDefault();
                     event.stopPropagation();
                     break;
@@ -391,7 +392,7 @@ export class Background {
                     break;
                 } else if (type === "open-search") {
                     /// #if !MOBILE
-                    openGlobalSearch(protyle.app, `#${target.textContent}#`, !window.siyuan.ctrlIsPressed);
+                    openGlobalSearch(protyle.app, `#${target.textContent}#`, !window.siyuan.ctrlIsPressed, {method: 0});
                     /// #else
                     popSearch(protyle.app, {
                         hasReplace: false,
@@ -442,12 +443,15 @@ export class Background {
         if (tags) {
             let html = "";
             const colors = ["secondary", "primary", "info", "success", "warning", "error", "pink"];
-            tags.split(",").forEach((item, index) => {
-                html += `<div class="b3-chip b3-chip--middle b3-chip--pointer b3-chip--${colors[index % 7]}" data-type="open-search">${item}<svg class="b3-chip__close" data-type="remove-tag"><use xlink:href="#iconCloseRound"></use></svg></div>`;
+            Array.from(new Set(tags.split(",").map(item => item.trim()))).forEach((item, index) => {
+                if (!item.replace(/ /g, "")) {
+                    return;
+                }
+                html += `<div class="b3-chip b3-chip--middle b3-chip--pointer b3-chip--${colors[index % 7]}" data-type="open-search">${escapeHtml(item)}<svg class="b3-chip__close" data-type="remove-tag"><use xlink:href="#iconCloseRound"></use></svg></div>`;
             });
-            this.tagsElement.innerHTML = `${html}<span class="fn__space"></span>
+            this.tagsElement.innerHTML = `${html}
 <div class="protyle-background__action fn__flex-center">
-    <button class="b3-button b3-button--cancel" style="margin-top: 0" data-menu="true" data-type="tag"><svg><use xlink:href="#iconAdd"></use></svg>${window.siyuan.languages.addTag}</button>
+    <button class="b3-button b3-button--cancel" style="margin-bottom: 8px" data-menu="true" data-type="tag"><svg><use xlink:href="#iconAdd"></use></svg>${window.siyuan.languages.addTag}</button>
 </div>`;
             this.tagsElement.classList.remove("fn__none");
             this.actionElements[0].classList.add("fn__none");
@@ -491,6 +495,12 @@ export class Background {
             this.actionElements[2].classList.remove("fn__none");
             this.iconElement.style.marginTop = "8px";
         }
+
+        if (img || icon) {
+            this.iconElement.parentElement.style.marginTop = "";
+        } else {
+            this.iconElement.parentElement.style.marginTop = "8px";
+        }
     }
 
     private openTag(protyle: IProtyle, target: HTMLElement) {
@@ -512,8 +522,12 @@ export class Background {
                     k: "",
                 }, (response) => {
                     let html = "";
+                    const currentTags = this.getTags();
                     response.data.tags.forEach((item: string, index: number) => {
-                        html += `<div class="b3-list-item b3-list-item--narrow${index === 0 ? " b3-list-item--focus" : ""}">${item}</div>`;
+                        html += `<div class="b3-list-item b3-list-item--narrow${index === 0 ? " b3-list-item--focus" : ""}">
+    <div class="fn__flex-1">${item}</div>
+    ${currentTags.includes(Lute.UnEscapeHTMLStr(item)) ? '<svg class="b3-menu__checked"><use xlink:href="#iconSelect"></use></svg>' : ""}
+</div>`;
                     });
                     listElement.innerHTML = html;
                 });
@@ -527,11 +541,12 @@ export class Background {
                     if (event.key === "Enter") {
                         const currentElement = listElement.querySelector(".b3-list-item--focus");
                         if (currentElement) {
-                            this.addTags(currentElement.textContent, protyle);
+                            this.addTags(currentElement.textContent.trim(), protyle);
                         } else {
-                            this.addTags(inputElement.value, protyle);
+                            this.addTags(inputElement.value.trim(), protyle);
                         }
-                        window.siyuan.menus.menu.remove();
+                        inputElement.value = "";
+                        inputElement.dispatchEvent(new CustomEvent("input"));
                     } else if (event.key === "Escape") {
                         window.siyuan.menus.menu.remove();
                     }
@@ -543,14 +558,18 @@ export class Background {
                     }, (response) => {
                         let searchHTML = "";
                         let hasKey = false;
+                        const currentTags = this.getTags();
                         response.data.tags.forEach((item: string) => {
-                            searchHTML += `<div class="b3-list-item b3-list-item--narrow">${item}</div>`;
+                            searchHTML += `<div class="b3-list-item b3-list-item--narrow">
+    <div class="fn__flex-1">${item}</div>
+    ${currentTags.includes(Lute.UnEscapeHTMLStr(item.replace(/<mark>/g, "").replace(/<\/mark>/g, ""))) ? '<svg class="b3-menu__checked"><use xlink:href="#iconSelect"></use></svg>' : ""}
+</div>`;
                             if (item === `<mark>${response.data.k}</mark>`) {
                                 hasKey = true;
                             }
                         });
                         if (!hasKey && response.data.k) {
-                            searchHTML = `<div class="b3-list-item b3-list-item--narrow"><mark>${response.data.k}</mark></div>` + searchHTML;
+                            searchHTML = `<div class="b3-list-item b3-list-item--narrow"><mark>${escapeHtml(response.data.k)}</mark></div>` + searchHTML;
                         }
                         listElement.innerHTML = searchHTML;
                         listElement.firstElementChild.classList.add("b3-list-item--focus");
@@ -562,7 +581,8 @@ export class Background {
                     if (!listItemElement) {
                         return;
                     }
-                    this.addTags(listItemElement.textContent, protyle);
+                    this.addTags(listItemElement.textContent.trim(), protyle);
+                    inputElement.dispatchEvent(new CustomEvent("input"));
                 });
             }
         });

@@ -1,4 +1,4 @@
-import {hasClosestBlock, hasClosestByAttribute} from "../protyle/util/hasClosest";
+import {hasClosestBlock, isInEmbedBlock} from "../protyle/util/hasClosest";
 import {getContenteditableElement} from "../protyle/wysiwyg/getBlock";
 import {focusByOffset, focusByRange, getSelectionOffset} from "../protyle/util/selection";
 import {hideElements} from "../protyle/ui/hideElements";
@@ -48,7 +48,7 @@ const focusStack = async (app: App, stack: IBackStack) => {
                 title: info.data.rootTitle,
                 docIcon: info.data.rootIcon,
                 callback(tab) {
-                    const scrollAttr = saveScroll(stack.protyle, true);
+                    const scrollAttr = saveScroll(stack.protyle, true) as IScrollAttr;
                     scrollAttr.rootId = stack.protyle.block.rootID;
                     scrollAttr.focusId = stack.id;
                     scrollAttr.focusStart = stack.position.start;
@@ -59,7 +59,7 @@ const focusStack = async (app: App, stack: IBackStack) => {
                         tab,
                         blockId: stack.zoomId || stack.protyle.block.rootID,
                         rootId: stack.protyle.block.rootID,
-                        action: stack.zoomId ? [Constants.CB_GET_FOCUS, Constants.CB_GET_ALL] : [Constants.CB_GET_FOCUS]
+                        action: stack.zoomId ? [Constants.CB_GET_FOCUS, Constants.CB_GET_ALL, Constants.CB_GET_UNUNDO] : [Constants.CB_GET_FOCUS, Constants.CB_GET_UNUNDO]
                     });
                     tab.addModel(editor);
                 }
@@ -97,7 +97,7 @@ const focusStack = async (app: App, stack: IBackStack) => {
                 focusByOffset(protyle.title.editElement, stack.position.start, stack.position.end);
             } else {
                 Array.from(protyle.wysiwyg.element.querySelectorAll(`[data-node-id="${stack.id}"]`)).find((item: HTMLElement) => {
-                    if (!hasClosestByAttribute(item, "data-type", "NodeBlockQueryEmbed")) {
+                    if (!isInEmbedBlock(item)) {
                         blockElement = item;
                         return true;
                     }
@@ -115,14 +115,13 @@ const focusStack = async (app: App, stack: IBackStack) => {
         if (stack.protyle.title.editElement.getBoundingClientRect().height === 0) {
             // 切换 tab
             stack.protyle.model.parent.parent.switchTab(stack.protyle.model.parent.headElement);
-            // 需要更新 range，否则 resize 中 `保持光标位置不变` 会导致光标跳动
             stack.protyle.toolbar.range = undefined;
         }
         focusByOffset(stack.protyle.title.editElement, stack.position.start, stack.position.end);
         return true;
     }
     Array.from(stack.protyle.wysiwyg.element.querySelectorAll(`[data-node-id="${stack.id}"]`)).find((item: HTMLElement) => {
-        if (!hasClosestByAttribute(item, "data-type", "NodeBlockQueryEmbed")) {
+        if (!isInEmbedBlock(item)) {
             blockElement = item;
             return true;
         }
@@ -165,7 +164,7 @@ const focusStack = async (app: App, stack: IBackStack) => {
                     protyle: stack.protyle,
                     afterCB() {
                         Array.from(stack.protyle.wysiwyg.element.querySelectorAll(`[data-node-id="${stack.id}"]`)).find((item: HTMLElement) => {
-                            if (!hasClosestByAttribute(item, "data-type", "NodeBlockQueryEmbed")) {
+                            if (!isInEmbedBlock(item)) {
                                 blockElement = item;
                                 return true;
                             }
@@ -193,7 +192,7 @@ const focusStack = async (app: App, stack: IBackStack) => {
             isPushBack: false,
             callback: () => {
                 Array.from(stack.protyle.wysiwyg.element.querySelectorAll(`[data-node-id="${stack.id}"]`)).find((item: HTMLElement) => {
-                    if (!hasClosestByAttribute(item, "data-type", "NodeBlockQueryEmbed")) {
+                    if (!isInEmbedBlock(item)) {
                         blockElement = item;
                         return true;
                     }

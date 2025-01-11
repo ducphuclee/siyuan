@@ -27,6 +27,8 @@
 @import "business/custom";
 @import "business/av";
 @import "business/search";
+@import "business/emojis";
+@import "component/svg";
 
 .block__popover {
   width: 80vw;
@@ -137,6 +139,15 @@
     &:not(.toolbar__icon-deactivate):hover {
       background-color: var(--b3-list-hover);
     }
+
+    &--history {
+      height: 36px;
+      width: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
   }
 
   &__title {
@@ -149,10 +160,6 @@
     border: 0;
     background-color: transparent;
     color: var(--b3-theme-on-background);
-  }
-
-  &__search {
-    margin: 8px;
   }
 
   &__text {
@@ -394,6 +401,7 @@
   stroke: currentColor;
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
 
   &--mid {
     width: 16px;
@@ -403,6 +411,11 @@
   &--small {
     width: 12px;
     height: 12px;
+  }
+
+  &--smaller {
+    width: 10px;
+    height: 10px;
   }
 }
 
@@ -421,6 +434,14 @@
 .b3-menu {
   &__accelerator {
     display: none;
+  }
+
+  &__item--warning {
+    color: var(--b3-theme-error);
+
+    & > .b3-menu__icon {
+      color: var(--b3-theme-error);
+    }
   }
 }
 
@@ -451,13 +472,6 @@
 }
 
 .protyle {
-  &-util {
-    .color__square {
-      height: 24px;
-      width: 24px;
-    }
-  }
-
   &-font {
     font-size: 14px;
   }
@@ -473,9 +487,14 @@
   &-background__img img {
     height: 200px;
   }
+
+  &-scroll {
+    right: 0;
+  }
 }
 
-.av__views .block__icon {
+.av__views .block__icon,
+.av__row--footer .av__calc {
   opacity: 1;
 }
 

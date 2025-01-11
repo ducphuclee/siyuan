@@ -12,7 +12,7 @@ import {MenuItem} from "../../menus/Menu";
 import {openFileAttr,} from "../../menus/commonMenuItem";
 import {Constants} from "../../constants";
 import {matchHotKey} from "../util/hotKey";
-import {isMac, readText, writeText} from "../util/compatibility";
+import {isMac, readText} from "../util/compatibility";
 import * as dayjs from "dayjs";
 import {openFileById} from "../../editor/util";
 import {setTitle} from "../../dialog/processSystem";
@@ -25,6 +25,7 @@ import {hideTooltip} from "../../dialog/tooltip";
 import {commonClick} from "../wysiwyg/commonClick";
 import {openTitleMenu} from "./openTitleMenu";
 import {electronUndo} from "../undo";
+import {enableLuteMarkdownSyntax, restoreLuteMarkdownSyntax} from "../util/paste";
 
 export class Title {
     public element: HTMLElement;
@@ -45,7 +46,17 @@ export class Title {
         this.editElement.addEventListener("paste", (event: ClipboardEvent) => {
             event.stopPropagation();
             event.preventDefault();
-            document.execCommand("insertText", false, replaceFileName(event.clipboardData.getData("text/plain")));
+            // 不能使用 range.insertNode，否则无法撤销
+            let text = event.clipboardData.getData("text/siyuan");
+            if (text) {
+                text = protyle.lute.BlockDOM2Content(text);
+            } else {
+                text = event.clipboardData.getData("text/plain");
+            }
+            // 阻止右键复制菜单报错
+            setTimeout(function () {
+                document.execCommand("insertText", false, replaceFileName(text));
+            }, 0);
             this.rename(protyle);
         });
         this.editElement.addEventListener("click", () => {
@@ -77,7 +88,9 @@ export class Title {
                 navigator.clipboard.readText().then(textPlain => {
                     // 对 HTML 标签进行内部转义，避免被 Lute 解析以后变为小写 https://github.com/siyuan-note/siyuan/issues/10620
                     textPlain = textPlain.replace(/</g, ";;;lt;;;").replace(/>/g, ";;;gt;;;");
+                    enableLuteMarkdownSyntax(protyle);
                     let content = protyle.lute.BlockDOM2EscapeMarkerContent(protyle.lute.Md2BlockDOM(textPlain));
+                    restoreLuteMarkdownSyntax(protyle);
                     // 移除 ;;;lt;;; 和 ;;;gt;;; 转义及其包裹的内容
                     content = content.replace(/;;;lt;;;[^;]+;;;gt;;;/g, "");
                     document.execCommand("insertText", false, replaceFileName(content));
@@ -105,7 +118,8 @@ export class Title {
             if (event.key === "ArrowDown") {
                 const rects = getSelection().getRangeAt(0).getClientRects();
                 // https://github.com/siyuan-note/siyuan/issues/11729
-                if (this.editElement.getBoundingClientRect().bottom - rects[rects.length - 1].bottom < 25) {
+                if (rects.length === 0 // 标题为空时时
+                    || this.editElement.getBoundingClientRect().bottom - rects[rects.length - 1].bottom < 25) {
                     const noContainerElement = getNoContainerElement(protyle.wysiwyg.element.firstElementChild);
                     // https://github.com/siyuan-note/siyuan/issues/4923
                     if (noContainerElement) {
@@ -146,18 +160,6 @@ export class Title {
                 event.stopPropagation();
             } else if (matchHotKey("⌘A", event)) {
                 getEditorRange(this.editElement).selectNodeContents(this.editElement);
-                event.preventDefault();
-                event.stopPropagation();
-            } else if (matchHotKey(window.siyuan.config.keymap.editor.general.copyID.custom, event)) {
-                writeText(protyle.block.rootID);
-                event.preventDefault();
-                event.stopPropagation();
-            } else if (matchHotKey(window.siyuan.config.keymap.editor.general.copyBlockEmbed.custom, event)) {
-                writeText(`{{select * from blocks where id='${protyle.block.rootID}'}}`);
-                event.preventDefault();
-                event.stopPropagation();
-            } else if (matchHotKey(window.siyuan.config.keymap.editor.general.copyProtocol.custom, event)) {
-                writeText(`siyuan://blocks/${protyle.block.rootID}`);
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -228,10 +230,7 @@ export class Title {
                 accelerator: "⌘V",
                 click: async () => {
                     focusByRange(getEditorRange(this.editElement));
-                    // 不能使用 execCommand https://github.com/siyuan-note/siyuan/issues/7045
-                    const text = await readText();
-                    document.execCommand("insertText", false, replaceFileName(text));
-                    this.rename(protyle);
+                    document.execCommand("paste");
                 }
             }).element);
             window.siyuan.menus.menu.append(new MenuItem({
@@ -240,7 +239,9 @@ export class Title {
                 click: async () => {
                     navigator.clipboard.readText().then(textPlain => {
                         textPlain = textPlain.replace(/</g, ";;;lt;;;").replace(/>/g, ";;;gt;;;");
+                        enableLuteMarkdownSyntax(protyle);
                         let content = protyle.lute.BlockDOM2EscapeMarkerContent(protyle.lute.Md2BlockDOM(textPlain));
+                        restoreLuteMarkdownSyntax(protyle);
                         // 移除 ;;;lt;;; 和 ;;;gt;;; 转义及其包裹的内容
                         content = content.replace(/;;;lt;;;[^;]+;;;gt;;;/g, "");
                         document.execCommand("insertText", false, replaceFileName(content));

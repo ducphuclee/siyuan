@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/88250/gulu"
 	"github.com/88250/lute/ast"
@@ -102,12 +101,13 @@ const (
 	KeyTypeLineNumber KeyType = "lineNumber"
 )
 
-// Key 描述了属性视图属性列的基础结构。
+// Key 描述了属性视图属性字段的基础结构。
 type Key struct {
-	ID   string  `json:"id"`   // 列 ID
-	Name string  `json:"name"` // 列名
-	Type KeyType `json:"type"` // 列类型
-	Icon string  `json:"icon"` // 列图标
+	ID   string  `json:"id"`   // 字段 ID
+	Name string  `json:"name"` // 字段名
+	Type KeyType `json:"type"` // 字段类型
+	Icon string  `json:"icon"` // 字段图标
+	Desc string  `json:"desc"` // 字段描述
 
 	// 以下是某些列类型的特有属性
 
@@ -154,8 +154,8 @@ type Date struct {
 }
 
 type Rollup struct {
-	RelationKeyID string      `json:"relationKeyID"` // 关联列 ID
-	KeyID         string      `json:"keyID"`         // 目标列 ID
+	RelationKeyID string      `json:"relationKeyID"` // 关联字段 ID
+	KeyID         string      `json:"keyID"`         // 目标字段 ID
 	Calc          *RollupCalc `json:"calc"`          // 计算方式
 }
 
@@ -171,8 +171,9 @@ type Relation struct {
 }
 
 type SelectOption struct {
-	Name  string `json:"name"`
-	Color string `json:"color"`
+	Name  string `json:"name"`  // 选项名称
+	Color string `json:"color"` // 选项颜色
+	Desc  string `json:"desc"`  // 选项描述
 }
 
 // View 描述了视图的结构。
@@ -181,6 +182,7 @@ type View struct {
 	Icon             string `json:"icon"`             // 视图图标
 	Name             string `json:"name"`             // 视图名称
 	HideAttrViewName bool   `json:"hideAttrViewName"` // 是否隐藏属性视图名称
+	Desc             string `json:"desc"`             // 视图描述
 
 	LayoutType LayoutType   `json:"type"`            // 当前布局类型
 	Table      *LayoutTable `json:"table,omitempty"` // 表格布局
@@ -264,7 +266,7 @@ func GetAttributeViewName(avID string) (ret string, err error) {
 
 func GetAttributeViewNameByPath(avJSONPath string) (ret string, err error) {
 	data, err := filelock.ReadFile(avJSONPath)
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("read attribute view [%s] failed: %s", avJSONPath, err)
 		return
 	}
@@ -296,10 +298,10 @@ func ParseAttributeView(avID string) (ret *AttributeView, err error) {
 	}
 
 	ret = &AttributeView{}
-	if err = gulu.JSON.UnmarshalJSON(data, ret); nil != err {
+	if err = gulu.JSON.UnmarshalJSON(data, ret); err != nil {
 		if strings.Contains(err.Error(), ".relation.contents of type av.Value") {
 			mapAv := map[string]interface{}{}
-			if err = gulu.JSON.UnmarshalJSON(data, &mapAv); nil != err {
+			if err = gulu.JSON.UnmarshalJSON(data, &mapAv); err != nil {
 				logging.LogErrorf("unmarshal attribute view [%s] failed: %s", avID, err)
 				return
 			}
@@ -338,12 +340,12 @@ func ParseAttributeView(avID string) (ret *AttributeView, err error) {
 			}
 
 			data, err = gulu.JSON.MarshalJSON(mapAv)
-			if nil != err {
+			if err != nil {
 				logging.LogErrorf("marshal attribute view [%s] failed: %s", avID, err)
 				return
 			}
 
-			if err = gulu.JSON.UnmarshalJSON(data, ret); nil != err {
+			if err = gulu.JSON.UnmarshalJSON(data, ret); err != nil {
 				logging.LogErrorf("unmarshal attribute view [%s] failed: %s", avID, err)
 				return
 			}
@@ -363,129 +365,7 @@ func SaveAttributeView(av *AttributeView) (err error) {
 	}
 
 	// 做一些数据兼容和订正处理
-	now := util.CurrentTimeMillis()
-	for _, kv := range av.KeyValues {
-		switch kv.Key.Type {
-		case KeyTypeBlock:
-			// 补全 block 的创建时间和更新时间
-			for _, v := range kv.Values {
-				if 0 == v.Block.Created {
-					logging.LogWarnf("block [%s] created time is empty", v.BlockID)
-					if "" == v.Block.ID {
-						v.Block.ID = v.BlockID
-						if "" == v.Block.ID {
-							v.Block.ID = ast.NewNodeID()
-							v.BlockID = v.Block.ID
-						}
-					}
-
-					createdStr := v.Block.ID[:len("20060102150405")]
-					created, parseErr := time.ParseInLocation("20060102150405", createdStr, time.Local)
-					if nil == parseErr {
-						v.Block.Created = created.UnixMilli()
-					} else {
-						v.Block.Created = now
-					}
-				}
-				if 0 == v.Block.Updated {
-					logging.LogWarnf("block [%s] updated time is empty", v.BlockID)
-					v.Block.Updated = v.Block.Created
-				}
-			}
-		case KeyTypeNumber:
-			for _, v := range kv.Values {
-				if nil != v.Number && 0 != v.Number.Content && !v.Number.IsNotEmpty {
-					v.Number.IsNotEmpty = true
-				}
-			}
-		}
-
-		for _, v := range kv.Values {
-			if "" == kv.Key.ID {
-				kv.Key.ID = ast.NewNodeID()
-				for _, val := range kv.Values {
-					val.KeyID = kv.Key.ID
-				}
-				if "" == v.KeyID {
-					logging.LogWarnf("value [%s] key id is empty", v.ID)
-					v.KeyID = kv.Key.ID
-				}
-
-				// 校验日期 IsNotEmpty
-				if KeyTypeDate == kv.Key.Type {
-					if nil != v.Date && 0 != v.Date.Content && !v.Date.IsNotEmpty {
-						v.Date.IsNotEmpty = true
-					}
-				}
-
-				// 校验数字 IsNotEmpty
-				if KeyTypeNumber == kv.Key.Type {
-					if nil != v.Number && 0 != v.Number.Content && !v.Number.IsNotEmpty {
-						v.Number.IsNotEmpty = true
-					}
-				}
-
-				// 清空关联实际值
-				if KeyTypeRelation == kv.Key.Type {
-					v.Relation.Contents = nil
-				}
-
-				// 清空汇总实际值
-				if KeyTypeRollup == kv.Key.Type {
-					v.Rollup.Contents = nil
-				}
-
-				for _, view := range av.Views {
-					switch view.LayoutType {
-					case LayoutTypeTable:
-						for _, column := range view.Table.Columns {
-							if "" == column.ID {
-								column.ID = kv.Key.ID
-								break
-							}
-						}
-					}
-				}
-			}
-
-			// 补全值的创建时间和更新时间
-			if "" == v.ID {
-				logging.LogWarnf("value id is empty")
-				v.ID = ast.NewNodeID()
-			}
-
-			if 0 == v.CreatedAt {
-				logging.LogWarnf("value [%s] created time is empty", v.ID)
-				createdStr := v.ID[:len("20060102150405")]
-				created, parseErr := time.ParseInLocation("20060102150405", createdStr, time.Local)
-				if nil == parseErr {
-					v.CreatedAt = created.UnixMilli()
-				} else {
-					v.CreatedAt = now
-				}
-			}
-
-			if 0 == v.UpdatedAt {
-				logging.LogWarnf("value [%s] updated time is empty", v.ID)
-				v.UpdatedAt = v.CreatedAt
-			}
-		}
-	}
-
-	// 补全过滤器 Value
-	for _, view := range av.Views {
-		if nil != view.Table {
-			for _, f := range view.Table.Filters {
-				if nil != f.Value {
-					continue
-				}
-
-				if k, _ := av.GetKey(f.Column); nil != k {
-					f.Value = &Value{Type: k.Type}
-				}
-			}
-		}
-	}
+	UpgradeSpec(av)
 
 	// 值去重
 	blockValues := av.GetBlockKeyValues()
@@ -524,13 +404,13 @@ func SaveAttributeView(av *AttributeView) (err error) {
 	} else {
 		data, err = gulu.JSON.MarshalIndentJSON(av, "", "\t")
 	}
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("marshal attribute view [%s] failed: %s", av.ID, err)
 		return
 	}
 
 	avJSONPath := GetAttributeViewDataPath(av.ID)
-	if err = filelock.WriteFile(avJSONPath, data); nil != err {
+	if err = filelock.WriteFile(avJSONPath, data); err != nil {
 		logging.LogErrorf("save attribute view [%s] failed: %s", av.ID, err)
 		return
 	}
@@ -645,11 +525,11 @@ func (av *AttributeView) GetBlockKey() (ret *Key) {
 func (av *AttributeView) ShallowClone() (ret *AttributeView) {
 	ret = &AttributeView{}
 	data, err := gulu.JSON.MarshalJSON(av)
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("marshal attribute view [%s] failed: %s", av.ID, err)
 		return nil
 	}
-	if err = gulu.JSON.UnmarshalJSON(data, ret); nil != err {
+	if err = gulu.JSON.UnmarshalJSON(data, ret); err != nil {
 		logging.LogErrorf("unmarshal attribute view [%s] failed: %s", av.ID, err)
 		return nil
 	}
@@ -708,7 +588,7 @@ func GetAttributeViewDataPath(avID string) (ret string) {
 	av := filepath.Join(util.DataDir, "storage", "av")
 	ret = filepath.Join(av, avID+".json")
 	if !gulu.File.IsDir(av) {
-		if err := os.MkdirAll(av, 0755); nil != err {
+		if err := os.MkdirAll(av, 0755); err != nil {
 			logging.LogErrorf("create attribute view dir failed: %s", err)
 			return
 		}
@@ -726,8 +606,9 @@ var (
 )
 
 const (
-	NodeAttrNameAvs = "custom-avs"        // 用于标记块所属的属性视图，逗号分隔 av id
-	NodeAttrView    = "custom-sy-av-view" // 用于标记块所属的属性视图视图 view id Database block support specified view https://github.com/siyuan-note/siyuan/issues/10443
+	NodeAttrNameAvs        = "custom-avs"          // 用于标记块所属的属性视图，逗号分隔 av id
+	NodeAttrView           = "custom-sy-av-view"   // 用于标记块所属的属性视图视图 view id Database block support specified view https://github.com/siyuan-note/siyuan/issues/10443
+	NodeAttrViewStaticText = "custom-sy-av-s-text" // 用于标记块所属的属性视图静态文本 Database-bound block primary key supports setting static anchor text https://github.com/siyuan-note/siyuan/issues/10049
 
 	NodeAttrViewNames = "av-names" // 用于临时标记块所属的属性视图名称，空格分隔
 )

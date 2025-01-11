@@ -28,13 +28,13 @@ export const image = {
     <div class="fn__flex-1">
         <div class="config-assets" data-type="remove" data-init="true">
             <div class="fn__hr--b"></div>
-            <label class="fn__flex">
+            <div class="fn__flex">
                 <div class="fn__space"></div>
                 <button id="removeAll" class="b3-button b3-button--outline fn__flex-center fn__size200">
                     <svg class="svg"><use xlink:href="#iconTrashcan"></use></svg>
                     ${window.siyuan.languages.delete}
                 </button>
-            </label>
+            </div>
             <div class="fn__hr"></div>
             <ul class="b3-list b3-list--background config-assets__list">
                 <li class="fn__loading"><img src="/stage/loading-pure.svg"></li>
@@ -68,7 +68,7 @@ export const image = {
                             assetsListElement.innerHTML = `<li class="b3-list--empty">${window.siyuan.languages.emptyContent}</li>`;
                             image.element.querySelector(".config-assets__preview").innerHTML = "";
                         });
-                    });
+                    }, undefined, true);
                 } else if (target.classList.contains("item") && !target.classList.contains("item--focus")) {
                     image.element.querySelector(".layout-tab-bar .item--focus").classList.remove("item--focus");
                     target.classList.add("item--focus");
@@ -113,7 +113,7 @@ export const image = {
                             }
                             image.element.querySelector(".config-assets__preview").innerHTML = "";
                         });
-                    });
+                    }, undefined, true);
                     event.preventDefault();
                     event.stopPropagation();
                     break;

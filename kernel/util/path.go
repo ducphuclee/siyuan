@@ -18,6 +18,7 @@ package util
 
 import (
 	"bytes"
+	"io/fs"
 	"net"
 	"os"
 	"path"
@@ -36,6 +37,13 @@ var (
 	UserAgent = "SiYuan/" + Ver
 )
 
+func GetTreeID(treePath string) string {
+	if strings.Contains(treePath, "\\") {
+		return strings.TrimSuffix(filepath.Base(treePath), ".sy")
+	}
+	return strings.TrimSuffix(path.Base(treePath), ".sy")
+}
+
 func ShortPathForBootingDisplay(p string) string {
 	if 25 > len(p) {
 		return p
@@ -48,7 +56,7 @@ func ShortPathForBootingDisplay(p string) string {
 var LocalIPs []string
 
 func GetLocalIPs() (ret []string) {
-	if ContainerAndroid == Container {
+	if ContainerAndroid == Container || ContainerHarmony == Container {
 		// Android 上用不了 net.InterfaceAddrs() https://github.com/golang/go/issues/40569，所以前面使用启动内核传入的参数 localIPs
 		LocalIPs = append(LocalIPs, LocalHost)
 		LocalIPs = gulu.Str.RemoveDuplicatedElem(LocalIPs)
@@ -57,7 +65,7 @@ func GetLocalIPs() (ret []string) {
 
 	ret = []string{}
 	addrs, err := net.InterfaceAddrs()
-	if nil != err {
+	if err != nil {
 		logging.LogWarnf("get interface addresses failed: %s", err)
 		return
 	}
@@ -167,7 +175,7 @@ func GetChildDocDepth(treeAbsPath string) (ret int) {
 
 	baseDepth := strings.Count(filepath.ToSlash(treeAbsPath), "/")
 	depth := 1
-	filelock.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	filelock.Walk(dir, func(path string, d fs.DirEntry, err error) error {
 		p := filepath.ToSlash(path)
 		currentDepth := strings.Count(p, "/")
 		if depth < currentDepth {
@@ -177,6 +185,44 @@ func GetChildDocDepth(treeAbsPath string) (ret int) {
 	})
 	ret = depth - baseDepth
 	return
+}
+
+func NormalizeConcurrentReqs(concurrentReqs int, provider int) int {
+	switch provider {
+	case 0: // SiYuan
+		switch {
+		case concurrentReqs < 1:
+			concurrentReqs = 8
+		case concurrentReqs > 16:
+			concurrentReqs = 16
+		default:
+		}
+	case 2: // S3
+		switch {
+		case concurrentReqs < 1:
+			concurrentReqs = 8
+		case concurrentReqs > 16:
+			concurrentReqs = 16
+		default:
+		}
+	case 3: // WebDAV
+		switch {
+		case concurrentReqs < 1:
+			concurrentReqs = 1
+		case concurrentReqs > 16:
+			concurrentReqs = 16
+		default:
+		}
+	case 4: // Local File System
+		switch {
+		case concurrentReqs < 1:
+			concurrentReqs = 16
+		case concurrentReqs > 1024:
+			concurrentReqs = 1024
+		default:
+		}
+	}
+	return concurrentReqs
 }
 
 func NormalizeTimeout(timeout int) int {
@@ -200,6 +246,18 @@ func NormalizeEndpoint(endpoint string) string {
 	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
 		endpoint = "http://" + endpoint
 	}
+	if !strings.HasSuffix(endpoint, "/") {
+		endpoint = endpoint + "/"
+	}
+	return endpoint
+}
+
+func NormalizeLocalPath(endpoint string) string {
+	endpoint = strings.TrimSpace(endpoint)
+	if "" == endpoint {
+		return ""
+	}
+	endpoint = filepath.ToSlash(filepath.Clean(endpoint))
 	if !strings.HasSuffix(endpoint, "/") {
 		endpoint = endpoint + "/"
 	}
@@ -246,7 +304,7 @@ func IsAssetLinkDest(dest []byte) bool {
 
 var (
 	SiYuanAssetsImage = []string{".apng", ".ico", ".cur", ".jpg", ".jpe", ".jpeg", ".jfif", ".pjp", ".pjpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".avif"}
-	SiYuanAssetsAudio = []string{".mp3", ".wav", ".ogg", ".m4a"}
+	SiYuanAssetsAudio = []string{".mp3", ".wav", ".ogg", ".m4a", ".flac"}
 	SiYuanAssetsVideo = []string{".mov", ".weba", ".mkv", ".mp4", ".webm"}
 )
 
@@ -278,4 +336,8 @@ func GetAbsPathInWorkspace(relPath string) (string, error) {
 		return absPath, nil
 	}
 	return "", os.ErrPermission
+}
+
+func IsAbsPathInWorkspace(absPath string) bool {
+	return IsSubPath(WorkspaceDir, absPath)
 }

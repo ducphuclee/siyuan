@@ -19,6 +19,8 @@
     * [Move documents](#Move-documents)
     * [Get human-readable path based on path](#Get-human-readable-path-based-on-path)
     * [Get human-readable path based on ID](#Get-human-readable-path-based-on-ID)
+    * [Get storage path based on ID](#Get-storage-path-based-on-ID)
+    * [Get IDs based on human-readable path](#Get-IDs-based-on-human-readable-path)
 * [Assets](#Assets)
     * [Upload assets](#Upload-assets)
 * [Blocks](#Blocks)
@@ -38,6 +40,7 @@
     * [Get block attributes](#Get-block-attributes)
 * [SQL](#SQL)
     * [Execute SQL query](#Execute-SQL-query)
+    * [Flush transaction](#Flush-transaction)
 * [Templates](#Templates)
     * [Render a template](#Render-a-template)
     * [Render Sprig](#Render-Sprig)
@@ -351,12 +354,37 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   {
     "notebook": "20210831090520-7dvbdv0",
     "path": "/20210902210113-0avi12f.sy",
-    "title": "Document new title"
+    "title": "New document title"
   }
   ```
 
     * `notebook`: Notebook ID
     * `path`: Document path
+    * `title`: New document title
+* Return value
+
+  ```json
+  {
+    "code": 0,
+    "msg": "",
+    "data": null
+  }
+  ```
+
+Rename a document by `id`:
+
+* `/api/filetree/renameDocByID`
+* Parameters
+
+  ```json
+  {
+    "id": "20210902210113-0avi12f",
+    "title": "New document title"
+  }
+  ```
+
+    * `id`: Document ID
+    * `title`: New document title
 * Return value
 
   ```json
@@ -391,6 +419,28 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   }
   ```
 
+Remove a document by `id`:
+
+* `/api/filetree/removeDocByID`
+* Parameters
+
+  ```json
+  {
+    "id": "20210902210113-0avi12f"
+  }
+  ```
+
+    * `id`: Document ID
+* Return value
+
+  ```json
+  {
+    "code": 0,
+    "msg": "",
+    "data": null
+  }
+  ```
+
 ### Move documents
 
 * `/api/filetree/moveDocs`
@@ -407,6 +457,30 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
     * `fromPaths`: Source paths
     * `toNotebook`: Target notebook ID
     * `toPath`: Target path
+* Return value
+
+  ```json
+  {
+    "code": 0,
+    "msg": "",
+    "data": null
+  }
+  ```
+
+Move documents by `id`:
+
+* `/api/filetree/moveDocsByID`
+* Parameters
+
+  ```json
+  {
+    "fromIDs": ["20210917220056-yxtyl7i"],
+    "toID": "20210817205410-2kvfpfn"
+  }
+  ```
+
+    * `fromIDs`: Source docs' IDs
+    * `toID`: Target parent ID
 * Return value
 
   ```json
@@ -463,6 +537,28 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   }
   ```
 
+### Get storage path based on ID
+
+* `/api/filetree/getPathByID`
+* Parameters
+
+  ```json
+  {
+    "id": "20210917220056-yxtyl7i"
+  }
+  ```
+
+    * `id`: Block ID
+* Return value
+
+  ```json
+  {
+    "code": 0,
+    "msg": "",
+    "data": "/20210828150719-r8edxl2/20210917220056-yxtyl7i.sy"
+  }
+  ```
+
 ### Get IDs based on human-readable path
 
 * `/api/filetree/getIDsByHPath`
@@ -475,8 +571,8 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   }
   ```
 
-  * `path`: Human-readable path
-  * `notebook`: Notebook ID
+    * `path`: Human-readable path
+    * `notebook`: Notebook ID
 * Return value
 
   ```json
@@ -500,9 +596,8 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
         * `"/assets/"`: workspace/data/assets/ folder
         * `"/assets/sub/"`: workspace/data/assets/sub/ folder
 
-      Under normal circumstances, it is recommended to use the first method, which is stored in the assets folder
-      of the workspace, putting in a subdirectory has some side effects, please refer to the assets chapter of the user
-      guide.
+      Under normal circumstances, it is recommended to use the first method, which is stored in the assets folder of the
+      workspace, putting in a subdirectory has some side effects, please refer to the assets chapter of the user guide.
     * `file[]`: Uploaded file list
 * Return value
 
@@ -547,8 +642,8 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
     * `previousID`: The ID of the previous block, used to anchor the insertion position
     * `parentID`: The ID of the parent block, used to anchor the insertion position
 
-  `nextID`, `previousID`, and `parentID` must have at least one value, using
-  priority: `nextID` > `previousID` > `parentID`
+  `nextID`, `previousID`, and `parentID` must have at least one value, using priority: `nextID` > `previousID` >
+  `parentID`
 * Return value
 
   ```json
@@ -796,7 +891,7 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   }
   ```
 
-  * `id`: Block ID to fold
+    * `id`: Block ID to fold
 * Return value
 
   ```json
@@ -818,7 +913,7 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   }
   ```
 
-  * `id`: Block ID to unfold
+    * `id`: Block ID to unfold
 * Return value
 
   ```json
@@ -997,6 +1092,20 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
     "data": [
       { "col": "val" }
     ]
+  }
+  ```
+
+### Flush transaction
+
+* `/api/sqlite/flushTransaction`
+* No parameters
+* Return value
+
+  ```json
+  {
+    "code": 0,
+    "msg": "",
+    "data": null
   }
   ```
 
@@ -1381,7 +1490,8 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
         * `base32` | `base32-std`
         * `base32-hex`
         * `hex`
-    * `responseEncoding`: The encoding scheme used by `body` in response data, default is `text`, optional values are as follows
+    * `responseEncoding`: The encoding scheme used by `body` in response data, default is `text`, optional values are as
+      follows
 
         * `text`
         * `base64` | `base64-std`
@@ -1408,7 +1518,8 @@ View API token in <kbd>Settings - About</kbd>, request header: `Authorization: T
   }
   ```
 
-    * `bodyEncoding`: The encoding scheme used by `body`, is consistent with field `responseEncoding` in request, default is `text`, optional values are as follows
+    * `bodyEncoding`: The encoding scheme used by `body`, is consistent with field `responseEncoding` in request,
+      default is `text`, optional values are as follows
 
         * `text`
         * `base64` | `base64-std`

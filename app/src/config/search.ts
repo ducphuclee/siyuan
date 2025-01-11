@@ -22,9 +22,11 @@ export const initConfigSearch = (element: HTMLElement, app: App) => {
             "outdent", "floatWindowMode", "floatWindowModeTip", "justify", "justifyTip", "rtl", "rtlTip", "spellcheck",
             "spellcheckTip", "backlinkExpand", "backlinkExpandTip", "backmentionExpand", "backmentionExpandTip",
             "onlySearchForDoc", "onlySearchForDocTip", "dynamicLoadBlocks", "dynamicLoadBlocksTip", "fontSizeScrollZoom", "fontSizeScrollZoomTip",
-            "listItemDotNumberClickFocus", "listItemDotNumberClickFocusTip", "editorMarkdownInlineSup", "editorMarkdownInlineSupTip",
-            "editorMarkdownInlineSub", "editorMarkdownInlineSubTip", "editorMarkdownInlineTag", "editorMarkdownInlineTagTip",
-            "editorMarkdownInlineMath", "editorMarkdownInlineMathTip", "allowHTMLBLockScript", "allowHTMLBLockScriptTip",
+            "listItemDotNumberClickFocus", "listItemDotNumberClickFocusTip", "editorMarkdownInlineAsterisk", "editorMarkdownInlineUnderscore",
+            "editorMarkdownInlineSup", "editorMarkdownInlineSupTip", "editorMarkdownInlineSub", "editorMarkdownInlineSubTip",
+            "editorMarkdownInlineTag", "editorMarkdownInlineTagTip", "editorMarkdownInlineMath", "editorMarkdownInlineMathTip", "editorMarkdownInlineStrikethrough", "editorMarkdownInlineStrikethroughTip",
+            "allowHTMLBLockScript", "allowHTMLBLockScriptTip", "backlinkExpandCount", "backlinkExpandTip", "backmentionExpandCount", "backmentionExpandTip",
+            "backlinkContainChildren", "backlinkContainChildrenTip"
         ]),
 
         // 文档树
@@ -45,7 +47,7 @@ export const initConfigSearch = (element: HTMLElement, app: App) => {
             "apiKeyTip", "apiProxy", "apiProxyTip", "apiBaseURL", "apiBaseURLTip", "apiUserAgentTip", "apiVersion", "apiVersionTip",
             "apiProvider", "apiProviderTip", "apiTemperature", "apiTemperatureTip", "apiMaxContexts", "apiMaxContextsTip"])),
 
-        // 图片
+        // 资源
         getLang(["assets", "unreferencedAssets", "missingAssets"]),
 
         // 导出
@@ -76,24 +78,30 @@ export const initConfigSearch = (element: HTMLElement, app: App) => {
             .concat(Object.keys(Constants.SIYUAN_KEYMAP.editor.list))
             .concat(Object.keys(Constants.SIYUAN_KEYMAP.editor.table))),
 
-        // 云端
-        getLang(["cloudStorage", "trafficStat", "sync", "backup", "cdn", "total", "sizeLimit", "cloudBackup",
-            "cloudBackupTip", "updatePath", "cloudSync", "upload", "download", "syncMode", "syncModeTip",
-            "generateConflictDoc", "generateConflictDocTip", "syncProvider", "syncProviderTip",
-            "syncMode1", "syncMode2", "reposTip", "openSyncTip1", "openSyncTip2", "cloudSyncDir", "config"]),
-
         // 账号
         getLang(["accountTip", "accountName", "password", "captcha", "forgetPassword", "login", "register",
             "twoFactorCaptcha", "account1", "account2", "account5"]),
 
+        // 云端
+        getLang(["cloudStorage", "trafficStat", "sync", "backup", "cdn", "total", "sizeLimit", "cloudBackup",
+            "cloudBackupTip", "updatePath", "cloudSync", "upload", "download", "syncMode", "syncModeTip",
+            "generateConflictDoc", "generateConflictDocTip", "syncProvider", "syncProviderTip",
+            "syncMode1", "syncMode2", "reposTip", "openSyncTip1", "openSyncTip2", "cloudSyncDir", "cloudSyncDirTip", "config"]),
+
+        // 发布
+        getLang(["publishService", "publishServiceTip", "publishServicePort", "publishServicePortTip",
+            "publishServiceAddresses", "publishServiceAddressesTip", "publishServiceAuth", "publishServiceAuthTip",
+            "publishServiceAuthAccounts", "publishServiceAuthAccountsTip"]),
+
         // 关于
         getLang(["autoLaunch", "autoLaunchTip", "about", "about1", "about2", "about3", "about4", "about5", "about6",
-            "about7", "about8", "about9", "about10", "about11", "about12", "about13", "about14", "about17", "config",
+            "about7", "about8", "about11", "about12", "about13", "about14", "about17", "config",
             "dataRepoKey", "dataRepoKeyTip1", "dataRepoKeyTip2", "slogan", "currentVer", "checkUpdate", "updatePath",
             "systemLog", "importKey", "genKey", "genKeyByPW", "copyKey", "resetRepo", "systemLogTip", "export",
             "downloadLatestVer", "safeQuit", "directConnection", "siyuanNote", "key", "password", "copied", "resetRepoTip",
             "autoDownloadUpdatePkg", "autoDownloadUpdatePkgTip", "networkProxy", "keyPlaceholder", "initRepoKeyTip",
-            "googleAnalytics", "googleAnalyticsTip"]),
+            "googleAnalytics", "googleAnalyticsTip", "dataRepoPurge", "dataRepoPurgeTip", "dataRepoAutoPurgeIndexRetentionDays",
+            "dataRepoAutoPurgeRetentionIndexesDaily"]),
     ];
     const inputElement = element.querySelector(".b3-form__icon input") as HTMLInputElement;
     /// #if !BROWSER

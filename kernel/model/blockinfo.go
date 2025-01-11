@@ -29,6 +29,7 @@ import (
 	"github.com/88250/lute/parse"
 	"github.com/siyuan-note/logging"
 	"github.com/siyuan-note/siyuan/kernel/av"
+	"github.com/siyuan-note/siyuan/kernel/filesys"
 	"github.com/siyuan-note/siyuan/kernel/sql"
 	"github.com/siyuan-note/siyuan/kernel/treenode"
 	"github.com/siyuan-note/siyuan/kernel/util"
@@ -52,10 +53,10 @@ type AttrView struct {
 }
 
 func GetDocInfo(blockID string) (ret *BlockInfo) {
-	WaitForWritingFiles()
+	FlushTxQueue()
 
 	tree, err := LoadTreeByBlockID(blockID)
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("load tree by root id [%s] failed: %s", blockID, err)
 		return
 	}
@@ -89,7 +90,8 @@ func GetDocInfo(blockID string) (ret *BlockInfo) {
 		}
 	}
 
-	ret.RefIDs, _ = sql.QueryRefIDsByDefID(blockID, false)
+	ret.RefIDs, _ = sql.QueryRefIDsByDefID(blockID, Conf.Editor.BacklinkContainChildren)
+	buildBacklinkListItemRefs(&ret.RefIDs)
 	ret.RefCount = len(ret.RefIDs) // 填充块引计数
 
 	// 填充属性视图角标 Display the database title on the block superscript https://github.com/siyuan-note/siyuan/issues/10545
@@ -111,7 +113,7 @@ func GetDocInfo(blockID string) (ret *BlockInfo) {
 	var subFileCount int
 	boxLocalPath := filepath.Join(util.DataDir, tree.Box)
 	subFiles, err := os.ReadDir(filepath.Join(boxLocalPath, strings.TrimSuffix(tree.Path, ".sy")))
-	if nil == err {
+	if err == nil {
 		for _, subFile := range subFiles {
 			if strings.HasSuffix(subFile.Name(), ".sy") {
 				subFileCount++
@@ -123,15 +125,96 @@ func GetDocInfo(blockID string) (ret *BlockInfo) {
 	return
 }
 
+func GetDocsInfo(blockIDs []string, queryRefCount bool, queryAv bool) (rets []*BlockInfo) {
+	FlushTxQueue()
+
+	trees := filesys.LoadTrees(blockIDs)
+	for _, blockID := range blockIDs {
+		tree := trees[blockID]
+		if nil == tree {
+			continue
+		}
+		title := tree.Root.IALAttr("title")
+		ret := &BlockInfo{ID: blockID, RootID: tree.Root.ID, Name: title}
+		ret.IAL = parse.IAL2Map(tree.Root.KramdownIAL)
+		scrollData := ret.IAL["scroll"]
+		if 0 < len(scrollData) {
+			scroll := map[string]interface{}{}
+			if parseErr := gulu.JSON.UnmarshalJSON([]byte(scrollData), &scroll); nil != parseErr {
+				logging.LogWarnf("parse scroll data [%s] failed: %s", scrollData, parseErr)
+				delete(ret.IAL, "scroll")
+			} else {
+				if zoomInId := scroll["zoomInId"]; nil != zoomInId {
+					if !treenode.ExistBlockTree(zoomInId.(string)) {
+						delete(ret.IAL, "scroll")
+					}
+				} else {
+					if startId := scroll["startId"]; nil != startId {
+						if !treenode.ExistBlockTree(startId.(string)) {
+							delete(ret.IAL, "scroll")
+						}
+					}
+					if endId := scroll["endId"]; nil != endId {
+						if !treenode.ExistBlockTree(endId.(string)) {
+							delete(ret.IAL, "scroll")
+						}
+					}
+				}
+			}
+		}
+		if queryRefCount {
+			ret.RefIDs, _ = sql.QueryRefIDsByDefID(blockID, Conf.Editor.BacklinkContainChildren)
+			ret.RefCount = len(ret.RefIDs) // 填充块引计数
+		}
+
+		if queryAv {
+			// 填充属性视图角标 Display the database title on the block superscript https://github.com/siyuan-note/siyuan/issues/10545
+			avIDs := strings.Split(ret.IAL[av.NodeAttrNameAvs], ",")
+			for _, avID := range avIDs {
+				avName, getErr := av.GetAttributeViewName(avID)
+				if nil != getErr {
+					continue
+				}
+
+				if "" == avName {
+					avName = Conf.language(105)
+				}
+
+				attrView := &AttrView{ID: avID, Name: avName}
+				ret.AttrViews = append(ret.AttrViews, attrView)
+			}
+		}
+
+		var subFileCount int
+		boxLocalPath := filepath.Join(util.DataDir, tree.Box)
+		subFiles, err := os.ReadDir(filepath.Join(boxLocalPath, strings.TrimSuffix(tree.Path, ".sy")))
+		if err == nil {
+			for _, subFile := range subFiles {
+				if strings.HasSuffix(subFile.Name(), ".sy") {
+					subFileCount++
+				}
+			}
+		}
+		ret.SubFileCount = subFileCount
+		ret.Icon = tree.Root.IALAttr("icon")
+
+		rets = append(rets, ret)
+
+	}
+	return
+}
+
 func GetBlockRefText(id string) string {
+	FlushTxQueue()
+
 	bt := treenode.GetBlockTree(id)
 	if nil == bt {
 		return ErrBlockNotFound.Error()
 	}
 
 	tree, err := LoadTreeByBlockID(id)
-	if nil != err {
-		return ErrTreeNotFound.Error()
+	if err != nil {
+		return ""
 	}
 
 	node := treenode.GetNodeInTree(tree, id)
@@ -157,7 +240,7 @@ func GetBlockRefText(id string) string {
 func GetDOMText(dom string) (ret string) {
 	luteEngine := NewLute()
 	tree := luteEngine.BlockDOM2Tree(dom)
-	ret = renderBlockText(tree.Root.FirstChild, nil)
+	ret = renderBlockText(tree.Root.FirstChild, nil, true)
 	return
 }
 
@@ -182,10 +265,32 @@ func getNodeRefText(node *ast.Node) string {
 		ret = util.EscapeHTML(ret)
 		return ret
 	}
-	return getNodeRefText0(node)
+	return getNodeRefText0(node, Conf.Editor.BlockRefDynamicAnchorTextMaxLen, true)
 }
 
-func getNodeRefText0(node *ast.Node) string {
+func getNodeAvBlockText(node *ast.Node) (icon, content string) {
+	if nil == node {
+		return
+	}
+
+	icon = node.IALAttr("icon")
+	if name := node.IALAttr("name"); "" != name {
+		name = strings.TrimSpace(name)
+		name = util.EscapeHTML(name)
+		content = name
+	} else {
+		content = getNodeRefText0(node, 1024, false)
+	}
+
+	content = strings.TrimSpace(content)
+	if "" == content {
+		content = Conf.language(105)
+	}
+
+	return
+}
+
+func getNodeRefText0(node *ast.Node, maxLen int, removeLineBreak bool) string {
 	switch node.Type {
 	case ast.NodeBlockQueryEmbed:
 		return "Query Embed Block..."
@@ -208,28 +313,32 @@ func getNodeRefText0(node *ast.Node) string {
 	if ast.NodeDocument != node.Type && node.IsContainerBlock() {
 		node = treenode.FirstLeafBlock(node)
 	}
-	ret := renderBlockText(node, nil)
-	if Conf.Editor.BlockRefDynamicAnchorTextMaxLen < utf8.RuneCountInString(ret) {
-		ret = gulu.Str.SubStr(ret, Conf.Editor.BlockRefDynamicAnchorTextMaxLen) + "..."
+	ret := renderBlockText(node, nil, removeLineBreak)
+	if maxLen < utf8.RuneCountInString(ret) {
+		ret = gulu.Str.SubStr(ret, maxLen) + "..."
 	}
 	return ret
 }
 
-func GetBlockRefIDs(id string) (refIDs, refTexts, defIDs []string) {
+func GetBlockRefs(defID string, isBacklink bool) (refIDs, refTexts, defIDs []string) {
 	refIDs = []string{}
 	refTexts = []string{}
 	defIDs = []string{}
-	bt := treenode.GetBlockTree(id)
+	bt := treenode.GetBlockTree(defID)
 	if nil == bt {
 		return
 	}
 
 	isDoc := bt.ID == bt.RootID
-	refIDs, refTexts = sql.QueryRefIDsByDefID(id, isDoc)
+	refIDs, refTexts = sql.QueryRefIDsByDefID(defID, isDoc)
 	if isDoc {
-		defIDs = sql.QueryChildDefIDsByRootDefID(id)
+		defIDs = sql.QueryChildDefIDsByRootDefID(defID)
 	} else {
-		defIDs = append(defIDs, id)
+		defIDs = append(defIDs, defID)
+	}
+
+	if isBacklink {
+		buildBacklinkListItemRefs(&refIDs)
 	}
 	return
 }
@@ -336,11 +445,11 @@ func BuildBlockBreadcrumb(id string, excludeTypes []string) (ret []*BlockPath, e
 		return
 	}
 
-	ret = buildBlockBreadcrumb(node, excludeTypes)
+	ret = buildBlockBreadcrumb(node, excludeTypes, false)
 	return
 }
 
-func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPath) {
+func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string, isEmbedBlock bool) (ret []*BlockPath) {
 	ret = []*BlockPath{}
 	if nil == node {
 		return
@@ -362,10 +471,7 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 			continue
 		}
 		id := parent.ID
-		fc := parent.FirstChild
-		if nil != fc && ast.NodeTaskListItemMarker == fc.Type {
-			fc = fc.Next
-		}
+		fc := treenode.FirstLeafBlock(parent)
 
 		name := parent.IALAttr("name")
 		if ast.NodeDocument == parent.Type {
@@ -374,10 +480,10 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 			name, _ = av.GetAttributeViewName(parent.AttributeViewID)
 		} else {
 			if "" == name {
-				if ast.NodeListItem == parent.Type {
-					name = gulu.Str.SubStr(renderBlockText(fc, excludeTypes), maxNameLen)
+				if ast.NodeListItem == parent.Type || ast.NodeList == parent.Type || ast.NodeSuperBlock == parent.Type || ast.NodeBlockquote == parent.Type {
+					name = gulu.Str.SubStr(renderBlockText(fc, excludeTypes, true), maxNameLen)
 				} else {
-					name = gulu.Str.SubStr(renderBlockText(parent, excludeTypes), maxNameLen)
+					name = gulu.Str.SubStr(renderBlockText(parent, excludeTypes, true), maxNameLen)
 				}
 			}
 			if ast.NodeHeading == parent.Type {
@@ -388,18 +494,28 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 		add := true
 		if ast.NodeList == parent.Type || ast.NodeSuperBlock == parent.Type || ast.NodeBlockquote == parent.Type {
 			add = false
+			if parent == node {
+				// https://github.com/siyuan-note/siyuan/issues/13141#issuecomment-2476789553
+				add = true
+			}
 		}
 		if ast.NodeParagraph == parent.Type && nil != parent.Parent && ast.NodeListItem == parent.Parent.Type && nil == parent.Next && (nil == parent.Previous || ast.NodeTaskListItemMarker == parent.Previous.Type) {
 			add = false
 		}
 		if ast.NodeListItem == parent.Type {
 			if "" == name {
-				name = gulu.Str.SubStr(renderBlockText(fc, excludeTypes), maxNameLen)
+				name = gulu.Str.SubStr(renderBlockText(fc, excludeTypes, true), maxNameLen)
 			}
 		}
 
 		name = strings.ReplaceAll(name, editor.Caret, "")
+		name = util.UnescapeHTML(name)
 		name = util.EscapeHTML(name)
+
+		if !isEmbedBlock && parent == node {
+			name = ""
+		}
+
 		if add {
 			ret = append([]*BlockPath{{
 				ID:      id,
@@ -421,7 +537,12 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 			}
 
 			if ast.NodeHeading == b.Type && headingLevel > b.HeadingLevel {
-				name = gulu.Str.SubStr(renderBlockText(b, excludeTypes), maxNameLen)
+				if b.ParentIs(ast.NodeListItem) {
+					// 标题在列表下时不显示 https://github.com/siyuan-note/siyuan/issues/13008
+					continue
+				}
+
+				name = gulu.Str.SubStr(renderBlockText(b, excludeTypes, true), maxNameLen)
 				name = util.EscapeHTML(name)
 				ret = append([]*BlockPath{{
 					ID:      b.ID,
@@ -434,4 +555,18 @@ func buildBlockBreadcrumb(node *ast.Node, excludeTypes []string) (ret []*BlockPa
 		}
 	}
 	return
+}
+
+func buildBacklinkListItemRefs(refIDs *[]string) {
+	refBts := treenode.GetBlockTrees(*refIDs)
+	for i, refID := range *refIDs {
+		if bt := refBts[refID]; nil != bt {
+			if "p" == bt.Type {
+				if parent := treenode.GetBlockTree(bt.ParentID); nil != parent && "i" == parent.Type {
+					// 引用计数浮窗请求，需要按照反链逻辑组装 https://github.com/siyuan-note/siyuan/issues/6853
+					(*refIDs)[i] = parent.ID
+				}
+			}
+		}
+	}
 }

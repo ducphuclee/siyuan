@@ -7,7 +7,7 @@ import {
     hasPreviousSibling,
     isNotEditBlock
 } from "./getBlock";
-import {transaction, updateTransaction} from "./transaction";
+import {transaction, turnsIntoOneTransaction, updateTransaction} from "./transaction";
 import {breakList, genListItemElement, listOutdent, updateListOrder} from "./list";
 import {highlightRender} from "../render/highlightRender";
 import {Constants} from "../../constants";
@@ -17,7 +17,7 @@ import {isIPad, setStorageVal} from "../util/compatibility";
 import {mathRender} from "../render/mathRender";
 import {isMobile} from "../../util/functions";
 import {processRender} from "../util/processCode";
-import {hasClosestByClassName} from "../util/hasClosest";
+import {hasClosestByAttribute, hasClosestByClassName} from "../util/hasClosest";
 
 export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle) => {
     if (hasClosestByClassName(blockElement, "protyle-wysiwyg__embed")) {
@@ -83,7 +83,7 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
             if (languageElement) {
                 if (window.siyuan.storage[Constants.LOCAL_CODELANG] && languageElement.textContent === "") {
                     languageElement.textContent = window.siyuan.storage[Constants.LOCAL_CODELANG];
-                } else {
+                } else if (!Constants.SIYUAN_RENDER_CODE_LANGUAGES.includes(languageElement.textContent)) {
                     window.siyuan.storage[Constants.LOCAL_CODELANG] = languageElement.textContent;
                     setStorageVal(Constants.LOCAL_CODELANG, window.siyuan.storage[Constants.LOCAL_CODELANG]);
                 }
@@ -117,9 +117,10 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
         range.insertNode(document.createTextNode("\n"));
         range.collapse(false);
         range.insertNode(wbrElement);
-        editableElement.removeAttribute("data-render");
+        editableElement.parentElement.removeAttribute("data-render");
         highlightRender(blockElement);
         updateTransaction(protyle, blockElement.getAttribute("data-node-id"), blockElement.outerHTML, oldHTML);
+        scrollCenter(protyle);
         return true;
     }
 
@@ -159,6 +160,15 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
             action: "delete",
             id: blockId,
         }, undoInsert]);
+        if (topId === blockId && blockElement.parentElement.classList.contains("sb") &&
+            blockElement.parentElement.getAttribute("data-sb-layout") === "col") {
+            turnsIntoOneTransaction({
+                protyle,
+                selectsElement: [blockElement.previousElementSibling, blockElement],
+                type: "BlocksMergeSuperBlock",
+                level: "row"
+            });
+        }
         focusByWbr(blockElement, range);
         return true;
     }
@@ -198,7 +208,19 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
     range.insertNode(wbrElement);
     const html = blockElement.outerHTML;
     wbrElement.remove();
+
     if (range.toString() !== "") {
+        // 选中数学公式后回车取消选中 https://github.com/siyuan-note/siyuan/issues/12637#issuecomment-2381106949
+        const mathElement = hasClosestByAttribute(range.startContainer, "data-type", "inline-math");
+        if (mathElement) {
+            const nextSibling = hasNextSibling(mathElement);
+            if (nextSibling) {
+                range = getSelection().getRangeAt(0);
+                range.setEnd(nextSibling, nextSibling.textContent.startsWith(Constants.ZWSP) ? 1 : 0);
+                range.collapse(false);
+            }
+            return true;
+        }
         range.extractContents();
     }
     if (editableElement.lastChild) {
@@ -237,6 +259,7 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
     const undoOperation: IOperation[] = [];
     let currentElement = blockElement;
     // 回车之前的块为 1\n\n2 时会产生多个块
+    const selectsElement: Element[] = [];
     Array.from(enterElement.children).forEach((item: HTMLElement) => {
         if (item.dataset.nodeId === id) {
             blockElement.before(item);
@@ -266,6 +289,7 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
         }
         mathRender(item);
         currentElement = item;
+        selectsElement.push(item);
     });
 
     Array.from(newElement.children).forEach((item: HTMLElement) => {
@@ -287,8 +311,18 @@ export const enter = (blockElement: HTMLElement, range: Range, protyle: IProtyle
             mathRender(currentElement.nextElementSibling);
         }
         currentElement = item;
+        selectsElement.push(item);
     });
+    const parentElement = currentElement.parentElement;
     transaction(protyle, doOperation, undoOperation);
+    if (parentElement.classList.contains("sb") && parentElement.getAttribute("data-sb-layout") === "col") {
+        turnsIntoOneTransaction({
+            protyle,
+            selectsElement,
+            type: "BlocksMergeSuperBlock",
+            level: "row"
+        });
+    }
     focusBlock(currentElement);
     scrollCenter(protyle);
     return true;
@@ -383,7 +417,13 @@ const listEnter = (protyle: IProtyle, blockElement: HTMLElement, range: Range) =
             newElement = genListItemElement(listItemElement, 0, false);
             const newEditElement = getContenteditableElement(newElement);
             newEditElement.appendChild(range.extractContents());
-            newEditElement.parentElement.after(subListElement);
+            let subListNextElement = subListElement.nextElementSibling;
+            newElement.lastElementChild.before(subListElement);
+            // https://github.com/siyuan-note/siyuan/issues/13016
+            while (!subListNextElement.classList.contains("protyle-attr")) {
+                subListNextElement = subListNextElement.nextElementSibling;
+                newElement.lastElementChild.before(subListNextElement.previousElementSibling);
+            }
             listItemElement.insertAdjacentElement("afterend", newElement);
             if (listItemElement.getAttribute("data-subtype") === "o") {
                 updateListOrder(listItemElement.parentElement);
@@ -431,8 +471,19 @@ const listEnter = (protyle: IProtyle, blockElement: HTMLElement, range: Range) =
     }
     range.insertNode(document.createElement("wbr"));
     const listItemHTML = listItemElement.outerHTML;
-    const html = listItemElement.parentElement.outerHTML;
+    const oldHTML = listItemElement.parentElement.outerHTML;
     if (range.toString() !== "") {
+        // 选中数学公式后回车取消选中 https://github.com/siyuan-note/siyuan/issues/12637#issuecomment-2381106949
+        const mathElement = hasClosestByAttribute(range.startContainer, "data-type", "inline-math");
+        if (mathElement) {
+            const nextSibling = hasNextSibling(mathElement);
+            if (nextSibling) {
+                range = getSelection().getRangeAt(0);
+                range.setEnd(nextSibling, nextSibling.textContent.startsWith(Constants.ZWSP) ? 1 : 0);
+                range.collapse(false);
+            }
+            return true;
+        }
         range.extractContents();
         range.insertNode(document.createElement("wbr"));
     }
@@ -478,7 +529,7 @@ const listEnter = (protyle: IProtyle, blockElement: HTMLElement, range: Range) =
             data: listItemHTML
         }]);
     } else {
-        updateTransaction(protyle, listItemElement.parentElement.getAttribute("data-node-id"), listItemElement.parentElement.outerHTML, html);
+        updateTransaction(protyle, listItemElement.parentElement.getAttribute("data-node-id"), listItemElement.parentElement.outerHTML, oldHTML);
     }
     focusByWbr(newElement, range);
     scrollCenter(protyle);
@@ -499,18 +550,26 @@ const removeEmptyNode = (newElement: Element) => {
 export const softEnter = (range: Range, nodeElement: HTMLElement, protyle: IProtyle) => {
     let startElement = range.startContainer as HTMLElement;
     const nextSibling = hasNextSibling(startElement) as Element;
-    // 图片之前软换行
-    if (nextSibling && nextSibling.nodeType !== 3 && nextSibling.classList.contains("img")) {
-        nextSibling.insertAdjacentHTML("beforebegin", "<wbr>");
-        const oldHTML = nodeElement.outerHTML;
-        nextSibling.previousElementSibling.remove();
-        const newlineNode = document.createTextNode("\n");
-        startElement.after(document.createTextNode(Constants.ZWSP));
-        startElement.after(newlineNode);
-        range.selectNode(newlineNode);
-        range.collapse(false);
-        updateTransaction(protyle, nodeElement.getAttribute("data-node-id"), nodeElement.outerHTML, oldHTML);
+    if (nodeElement.getAttribute("data-type") === "NodeAttributeView") {
         return true;
+    }
+    if (nextSibling && nextSibling.nodeType !== 3) {
+        const textPosition = getSelectionOffset(range.startContainer, protyle.wysiwyg.element, range);
+        if (textPosition.end === range.endContainer.textContent.length) {
+            // 图片之前软换行 || 数学公式之前软换行 https://github.com/siyuan-note/siyuan/issues/13621
+            if (nextSibling.classList.contains("img") || nextSibling.getAttribute("data-type") === "inline-math") {
+                nextSibling.insertAdjacentHTML("beforebegin", "<wbr>");
+                const oldHTML = nodeElement.outerHTML;
+                nextSibling.previousElementSibling.remove();
+                const newlineNode = document.createTextNode("\n");
+                startElement.after(document.createTextNode(Constants.ZWSP));
+                startElement.after(newlineNode);
+                range.selectNode(newlineNode);
+                range.collapse(false);
+                updateTransaction(protyle, nodeElement.getAttribute("data-node-id"), nodeElement.outerHTML, oldHTML);
+                return true;
+            }
+        }
     }
     // 行内元素末尾软换行 https://github.com/siyuan-note/insider/issues/886
     if (startElement.nodeType === 3) {

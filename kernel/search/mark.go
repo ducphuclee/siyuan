@@ -18,20 +18,19 @@ package search
 
 import (
 	"fmt"
-	"github.com/88250/gulu"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/88250/gulu"
 	"github.com/88250/lute/lex"
 	"github.com/siyuan-note/siyuan/kernel/util"
 )
 
 func MarkText(text string, keyword string, beforeLen int, caseSensitive bool) (pos int, marked string) {
 	if "" == keyword {
-		return -1, util.EscapeHTML(text)
+		return -1, text
 	}
-	text = util.EscapeHTML(text)
 	keywords := SplitKeyword(keyword)
 	marked = EncloseHighlighting(text, keywords, "<mark>", "</mark>", caseSensitive, false)
 
@@ -96,7 +95,7 @@ func EncloseHighlighting(text string, keywords []string, openMark, closeMark str
 		if splitWords {
 			wordBoundary = lex.IsASCIILetterNums(gulu.Str.ToBytes(k)) // Improve virtual reference split words https://github.com/siyuan-note/siyuan/issues/7833
 		}
-		k = regexp.QuoteMeta(k)
+		k = regexp.QuoteMeta(util.EscapeHTML(k))
 		re += "("
 		if wordBoundary {
 			re += "\\b"
@@ -111,10 +110,10 @@ func EncloseHighlighting(text string, keywords []string, openMark, closeMark str
 		}
 	}
 	re += ")"
-	ret = text
+	ret = util.EscapeHTML(text)
 
-	if reg, err := regexp.Compile(re); nil == err {
-		ret = reg.ReplaceAllStringFunc(text, func(s string) string { return openMark + s + closeMark })
+	if reg, err := regexp.Compile(re); err == nil {
+		ret = reg.ReplaceAllStringFunc(ret, func(s string) string { return openMark + s + closeMark })
 	}
 
 	// 搜索结果预览包含转义符问题 Search results preview contains escape character issue https://github.com/siyuan-note/siyuan/issues/9790

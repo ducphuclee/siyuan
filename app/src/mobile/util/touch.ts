@@ -66,7 +66,7 @@ export const handleTouchEnd = (event: TouchEvent, app: App) => {
     }
 
     const isXScroll = Math.abs(xDiff) > Math.abs(yDiff);
-    const modelElement = hasClosestByAttribute(target, "id", "model");
+    const modelElement = hasClosestByAttribute(target, "id", "model", true);
     if (modelElement) {
         if (isXScroll && firstDirection === "toRight" && !lastClientX) {
             closeModel();
@@ -173,6 +173,12 @@ export const handleTouchMove = (event: TouchEvent) => {
     ) {
         return;
     }
+
+    // 正在编辑时禁止滑动
+    if(!document.querySelector("#keyboardToolbar").classList.contains("fn__none")) {
+        return;
+    }
+    // 只读状态下选中内容时时禁止滑动
     if (getSelection().rangeCount > 0) {
         // 选中后扩选的情况
         const range = getSelection().getRangeAt(0);

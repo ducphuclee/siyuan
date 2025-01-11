@@ -45,7 +45,7 @@ func exportAttributeView(c *gin.Context) {
 	avID := arg["id"].(string)
 	blockID := arg["blockID"].(string)
 	zipPath, err := model.ExportAv2CSV(avID, blockID)
-	if nil != err {
+	if err != nil {
 		ret.Code = 1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
@@ -67,7 +67,7 @@ func exportEPUB(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "epub", ".epub")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "epub", ".epub")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -84,7 +84,7 @@ func exportRTF(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "rtf", ".rtf")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "rtf", ".rtf")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -101,7 +101,7 @@ func exportODT(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "odt", ".odt")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "odt", ".odt")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -118,7 +118,7 @@ func exportMediaWiki(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "mediawiki", ".wiki")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "mediawiki", ".wiki")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -135,7 +135,7 @@ func exportOrgMode(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "org", ".org")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "org", ".org")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -152,7 +152,7 @@ func exportOPML(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "opml", ".opml")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "opml", ".opml")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -169,7 +169,7 @@ func exportTextile(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "textile", ".textile")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "textile", ".textile")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -186,7 +186,7 @@ func exportAsciiDoc(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "asciidoc", ".adoc")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "asciidoc", ".adoc")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -203,7 +203,7 @@ func exportReStructuredText(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "rst", ".rst")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "rst", ".rst")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -221,7 +221,7 @@ func export2Liandi(c *gin.Context) {
 
 	id := arg["id"].(string)
 	err := model.Export2Liandi(id)
-	if nil != err {
+	if err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
@@ -239,7 +239,7 @@ func exportDataInFolder(c *gin.Context) {
 
 	exportFolder := arg["folder"].(string)
 	name, err := model.ExportDataInFolder(exportFolder)
-	if nil != err {
+	if err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
@@ -255,7 +255,7 @@ func exportData(c *gin.Context) {
 	defer c.JSON(http.StatusOK, ret)
 
 	zipPath, err := model.ExportData()
-	if nil != err {
+	if err != nil {
 		ret.Code = 1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
@@ -296,7 +296,7 @@ func exportResources(c *gin.Context) {
 	}
 
 	zipFilePath, err := model.ExportResources(resourcePaths, name)
-	if nil != err {
+	if err != nil {
 		ret.Code = 1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
@@ -307,7 +307,7 @@ func exportResources(c *gin.Context) {
 	}
 }
 
-func batchExportMd(c *gin.Context) {
+func exportNotebookMd(c *gin.Context) {
 	ret := gulu.Ret.NewResult()
 	defer c.JSON(http.StatusOK, ret)
 
@@ -317,10 +317,31 @@ func batchExportMd(c *gin.Context) {
 	}
 
 	notebook := arg["notebook"].(string)
-	p := arg["path"].(string)
-	zipPath := model.BatchExportMarkdown(notebook, p)
+	zipPath := model.ExportNotebookMarkdown(notebook)
 	ret.Data = map[string]interface{}{
 		"name": path.Base(zipPath),
+		"zip":  zipPath,
+	}
+}
+
+func exportMds(c *gin.Context) {
+	ret := gulu.Ret.NewResult()
+	defer c.JSON(http.StatusOK, ret)
+
+	arg, ok := util.JsonArg(c, ret)
+	if !ok {
+		return
+	}
+
+	idsArg := arg["ids"].([]interface{})
+	var ids []string
+	for _, id := range idsArg {
+		ids = append(ids, id.(string))
+	}
+
+	name, zipPath := model.ExportPandocConvertZip(ids, "", ".md")
+	ret.Data = map[string]interface{}{
+		"name": name,
 		"zip":  zipPath,
 	}
 }
@@ -335,7 +356,7 @@ func exportMd(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	name, zipPath := model.ExportPandocConvertZip(id, "", ".md")
+	name, zipPath := model.ExportPandocConvertZip([]string{id}, "", ".md")
 	ret.Data = map[string]interface{}{
 		"name": name,
 		"zip":  zipPath,
@@ -414,7 +435,7 @@ func exportDocx(c *gin.Context) {
 	}
 
 	fullPath, err := model.ExportDocx(id, savePath, removeAssets, merge)
-	if nil != err {
+	if err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
@@ -455,14 +476,14 @@ func exportTempContent(c *gin.Context) {
 
 	content := arg["content"].(string)
 	tmpExport := filepath.Join(util.TempDir, "export", "temp")
-	if err := os.MkdirAll(tmpExport, 0755); nil != err {
+	if err := os.MkdirAll(tmpExport, 0755); err != nil {
 		ret.Code = 1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
 		return
 	}
 	p := filepath.Join(tmpExport, gulu.Rand.String(7))
-	if err := os.WriteFile(p, []byte(content), 0644); nil != err {
+	if err := os.WriteFile(p, []byte(content), 0644); err != nil {
 		ret.Code = 1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 7000}
@@ -563,7 +584,7 @@ func processPDF(c *gin.Context) {
 	removeAssets := arg["removeAssets"].(bool)
 	watermark := arg["watermark"].(bool)
 	err := model.ProcessPDF(id, path, merge, removeAssets, watermark)
-	if nil != err {
+	if err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
@@ -580,10 +601,9 @@ func exportPreview(c *gin.Context) {
 	}
 
 	id := arg["id"].(string)
-	stdHTML, outline := model.Preview(id)
+	stdHTML := model.Preview(id)
 	ret.Data = map[string]interface{}{
-		"html":    stdHTML,
-		"outline": outline,
+		"html": stdHTML,
 	}
 }
 
@@ -592,7 +612,7 @@ func exportAsFile(c *gin.Context) {
 	defer c.JSON(http.StatusOK, ret)
 
 	form, err := c.MultipartForm()
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("export as file failed: %s", err)
 		ret.Code = -1
 		ret.Msg = err.Error()
@@ -601,7 +621,7 @@ func exportAsFile(c *gin.Context) {
 
 	file := form.File["file"][0]
 	reader, err := file.Open()
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("export as file failed: %s", err)
 		ret.Code = -1
 		ret.Msg = err.Error()
@@ -610,7 +630,7 @@ func exportAsFile(c *gin.Context) {
 	defer reader.Close()
 
 	data, err := io.ReadAll(reader)
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("export as file failed: %s", err)
 		ret.Code = -1
 		ret.Msg = err.Error()
@@ -620,7 +640,7 @@ func exportAsFile(c *gin.Context) {
 	name := "file-" + file.Filename
 	name = util.FilterFileName(name)
 	tmpDir := filepath.Join(util.TempDir, "export")
-	if err = os.MkdirAll(tmpDir, 0755); nil != err {
+	if err = os.MkdirAll(tmpDir, 0755); err != nil {
 		logging.LogErrorf("export as file failed: %s", err)
 		ret.Code = -1
 		ret.Msg = err.Error()
@@ -629,7 +649,7 @@ func exportAsFile(c *gin.Context) {
 
 	tmp := filepath.Join(tmpDir, name)
 	err = os.WriteFile(tmp, data, 0644)
-	if nil != err {
+	if err != nil {
 		logging.LogErrorf("export as file failed: %s", err)
 		ret.Code = -1
 		ret.Msg = err.Error()

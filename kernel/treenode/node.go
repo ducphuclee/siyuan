@@ -18,6 +18,9 @@ package treenode
 
 import (
 	"bytes"
+	"strings"
+	"sync"
+
 	"github.com/88250/gulu"
 	"github.com/88250/lute"
 	"github.com/88250/lute/ast"
@@ -26,12 +29,9 @@ import (
 	"github.com/88250/lute/parse"
 	"github.com/88250/lute/render"
 	"github.com/88250/vitess-sqlparser/sqlparser"
-	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/siyuan-note/logging"
 	"github.com/siyuan-note/siyuan/kernel/cache"
 	"github.com/siyuan-note/siyuan/kernel/util"
-	"strings"
-	"sync"
 )
 
 func GetEmbedBlockRef(embedNode *ast.Node) (blockRefID string) {
@@ -46,7 +46,7 @@ func GetEmbedBlockRef(embedNode *ast.Node) (blockRefID string) {
 
 	stmt := scriptNode.TokensStr()
 	parsedStmt, err := sqlparser.Parse(stmt)
-	if nil != err {
+	if err != nil {
 		return
 	}
 
@@ -103,6 +103,13 @@ func IsBlockRef(n *ast.Node) bool {
 	return ast.NodeTextMark == n.Type && n.IsTextMarkType("block-ref")
 }
 
+func IsBlockLink(n *ast.Node) bool {
+	if nil == n {
+		return false
+	}
+	return ast.NodeTextMark == n.Type && n.IsTextMarkType("a") && strings.HasPrefix(n.TextMarkAHref, "siyuan://blocks/")
+}
+
 func IsFileAnnotationRef(n *ast.Node) bool {
 	if nil == n {
 		return false
@@ -116,7 +123,7 @@ func IsEmbedBlockRef(n *ast.Node) bool {
 
 func FormatNode(node *ast.Node, luteEngine *lute.Lute) string {
 	markdown, err := lute.FormatNodeSync(node, luteEngine.ParseOptions, luteEngine.RenderOptions)
-	if nil != err {
+	if err != nil {
 		root := TreeRoot(node)
 		logging.LogFatalf(logging.ExitCodeFatal, "format node [%s] in tree [%s] failed: %s", node.ID, root.ID, err)
 	}
@@ -125,7 +132,7 @@ func FormatNode(node *ast.Node, luteEngine *lute.Lute) string {
 
 func ExportNodeStdMd(node *ast.Node, luteEngine *lute.Lute) string {
 	markdown, err := lute.ProtyleExportMdNodeSync(node, luteEngine.ParseOptions, luteEngine.RenderOptions)
-	if nil != err {
+	if err != nil {
 		root := TreeRoot(node)
 		logging.LogFatalf(logging.ExitCodeFatal, "export markdown for node [%s] in tree [%s] failed: %s", node.ID, root.ID, err)
 	}
@@ -169,10 +176,6 @@ func GetNodeSrcTokens(n *ast.Node) (ret string) {
 		src := n.Tokens[index+len("src=\""):]
 		if index = bytes.Index(src, []byte("\"")); 0 < index {
 			src = src[:bytes.Index(src, []byte("\""))]
-			if !IsRelativePath(src) {
-				return
-			}
-
 			ret = strings.TrimSpace(string(src))
 			return
 		}
@@ -180,16 +183,6 @@ func GetNodeSrcTokens(n *ast.Node) (ret string) {
 		logging.LogWarnf("src is missing the closing double quote in tree [%s] ", n.Box+n.Path)
 	}
 	return
-}
-
-func IsRelativePath(dest []byte) bool {
-	if 1 > len(dest) {
-		return false
-	}
-	if '/' == dest[0] {
-		return false
-	}
-	return !bytes.Contains(dest, []byte(":"))
 }
 
 func FirstLeafBlock(node *ast.Node) (ret *ast.Node) {
@@ -229,7 +222,6 @@ func CountBlockNodes(node *ast.Node) (ret int) {
 func ParentNodesWithHeadings(node *ast.Node) (parents []*ast.Node) {
 	const maxDepth = 255
 	i := 0
-	headingIDs := hashset.New()
 	for n := node; nil != n; n = n.Parent {
 		parent := n.Parent
 		if maxDepth < i {
@@ -245,10 +237,17 @@ func ParentNodesWithHeadings(node *ast.Node) (parents []*ast.Node) {
 		// 标题下方块编辑后刷新标题块更新时间
 		// The heading block update time is refreshed after editing the blocks under the heading https://github.com/siyuan-note/siyuan/issues/11374
 		parentHeadingLevel := 7
+		if ast.NodeHeading == n.Type {
+			parentHeadingLevel = n.HeadingLevel
+		}
 		for prev := n.Previous; nil != prev; prev = prev.Previous {
-			if ast.NodeHeading == prev.Type && prev.HeadingLevel < parentHeadingLevel && !headingIDs.Contains(prev.ID) {
+			if ast.NodeHeading == prev.Type {
+				if prev.HeadingLevel >= parentHeadingLevel {
+					break
+				}
+
 				parents = append(parents, prev)
-				headingIDs.Add(prev.ID)
+				parentHeadingLevel = prev.HeadingLevel
 			}
 		}
 
@@ -446,6 +445,11 @@ var DynamicRefTexts = sync.Map{}
 func SetDynamicBlockRefText(blockRef *ast.Node, refText string) {
 	if !IsBlockRef(blockRef) {
 		return
+	}
+
+	refText = strings.TrimSpace(refText)
+	if "" == refText {
+		refText = blockRef.TextMarkBlockRefID
 	}
 
 	blockRef.TextMarkBlockRefSubtype = "d"

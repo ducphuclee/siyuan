@@ -7,7 +7,7 @@
 		"id": "20240530101000-6x9ivi7",
 		"title": "テンプレートスニペット",
 		"type": "doc",
-		"updated": "20240530101000"
+		"updated": "20241225192831"
 	},
 	"Children": [
 		{
@@ -66,7 +66,7 @@
 			"Properties": {
 				"ID": "20240530101000-5nvn9ad",
 				"id": "20240530101000-pi05yzt",
-				"updated": "20240530101000"
+				"updated": "20241225192831"
 			},
 			"Children": [
 				{
@@ -225,9 +225,8 @@
 			"Type": "NodeList",
 			"ListData": {},
 			"Properties": {
-				"ID": "20240530101000-pbi857j",
 				"id": "20240530101000-by5hqnb",
-				"updated": "20240530101000"
+				"updated": "20241225192831"
 			},
 			"Children": [
 				{
@@ -238,7 +237,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-7szjdq0",
 						"id": "20240530101000-bua0yt4",
 						"updated": "20240530101000"
 					},
@@ -247,7 +245,6 @@
 							"ID": "20240530101000-ktp2f1l",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-n2filyd",
 								"id": "20240530101000-ktp2f1l",
 								"updated": "20240530101000"
 							},
@@ -286,7 +283,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-k9jf36d",
 						"id": "20240530101000-wx2hcib",
 						"updated": "20240530101000"
 					},
@@ -295,7 +291,6 @@
 							"ID": "20240530101000-ilxclyp",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-1otmc3i",
 								"id": "20240530101000-ilxclyp",
 								"updated": "20240530101000"
 							},
@@ -325,7 +320,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-18jxuyf",
 						"id": "20240530101000-k46zytu",
 						"updated": "20240530101000"
 					},
@@ -334,7 +328,6 @@
 							"ID": "20240530101000-v63d69b",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-ayy7vo8",
 								"id": "20240530101000-v63d69b",
 								"updated": "20240530101000"
 							},
@@ -364,7 +357,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-3cpwez9",
 						"id": "20240530101000-2xrfh9j",
 						"updated": "20240530101000"
 					},
@@ -373,7 +365,6 @@
 							"ID": "20240530101000-ag584e3",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-fal2ki7",
 								"id": "20240530101000-ag584e3",
 								"updated": "20240530101000"
 							},
@@ -396,6 +387,43 @@
 					]
 				},
 				{
+					"ID": "20240921122700-o8mea2f",
+					"Type": "NodeListItem",
+					"ListData": {
+						"BulletChar": 42,
+						"Marker": "Kg=="
+					},
+					"Properties": {
+						"id": "20240921122700-o8mea2f",
+						"updated": "20240921123108"
+					},
+					"Children": [
+						{
+							"ID": "20240921122700-gol6drn",
+							"Type": "NodeParagraph",
+							"Properties": {
+								"id": "20240921122700-gol6drn",
+								"updated": "20240921123108"
+							},
+							"Children": [
+								{
+									"Type": "NodeText",
+									"Data": "​"
+								},
+								{
+									"Type": "NodeTextMark",
+									"TextMarkType": "code",
+									"TextMarkTextContent": "getHPathByID"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "​: この関数は、ブロック ID に対応するブロックの可読パスを返すために使用されます"
+								}
+							]
+						}
+					]
+				},
+				{
 					"ID": "20240530101000-0y2zlji",
 					"Type": "NodeListItem",
 					"ListData": {
@@ -403,7 +431,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-0u2osa4",
 						"id": "20240530101000-0y2zlji",
 						"updated": "20240530101000"
 					},
@@ -412,9 +439,8 @@
 							"ID": "20240530101000-obb5zo9",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-sst30kp",
 								"id": "20240530101000-obb5zo9",
-								"updated": "20240530101000"
+								"updated": "20241213215612"
 							},
 							"Children": [
 								{
@@ -428,7 +454,42 @@
 								},
 								{
 									"Type": "NodeText",
-									"Data": "​: この関数はデータベースをクエリしてブロックのリストを返します (下記の使用例を参照してください)"
+									"Data": "​: この関数は"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "データベース"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "をクエリしてブロックのリストを返します"
+								}
+							]
+						},
+						{
+							"ID": "20241213215628-5gixpmp",
+							"Type": "NodeCodeBlock",
+							"IsFencedCodeBlock": true,
+							"Properties": {
+								"id": "20241213215628-5gixpmp",
+								"style": "line-height: 22px;",
+								"updated": "20241213215628"
+							},
+							"Children": [
+								{
+									"Type": "NodeCodeBlockFenceOpenMarker",
+									"Data": "```"
+								},
+								{
+									"Type": "NodeCodeBlockFenceInfoMarker"
+								},
+								{
+									"Type": "NodeCodeBlockCode",
+									"Data": ".action{$today := now | date \"20060102150405\"}\n.action{$blocks :=queryBlocks \"SELECT * FROM blocks WHERE content LIKE '?' AND updated \u003e '?' LIMIT ?\" \"%foo%\" $today \"3\"}\n"
+								},
+								{
+									"Type": "NodeCodeBlockFenceCloseMarker",
+									"Data": "```"
 								}
 							]
 						}
@@ -442,18 +503,16 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-lk0kh1g",
 						"id": "20240530101000-238ctfi",
-						"updated": "20240530101000"
+						"updated": "20241224162728"
 					},
 					"Children": [
 						{
 							"ID": "20240530101000-4wi25sk",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-zh2wjz8",
 								"id": "20240530101000-4wi25sk",
-								"updated": "20240530101000"
+								"updated": "20241213215614"
 							},
 							"Children": [
 								{
@@ -467,7 +526,431 @@
 								},
 								{
 									"Type": "NodeText",
-									"Data": "​: この関数はデータベースをクエリしてスパンのリストを返します (下記の使用例を参照してください)"
+									"Data": "​: この関数は"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "データベース"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "をクエリしてスパンのリストを返します"
+								}
+							]
+						},
+						{
+							"ID": "20241213215619-gkqs282",
+							"Type": "NodeCodeBlock",
+							"IsFencedCodeBlock": true,
+							"Properties": {
+								"id": "20241213215619-gkqs282",
+								"style": "line-height: 22px;",
+								"updated": "20241224162728"
+							},
+							"Children": [
+								{
+									"Type": "NodeCodeBlockFenceOpenMarker",
+									"Data": "```"
+								},
+								{
+									"Type": "NodeCodeBlockFenceInfoMarker"
+								},
+								{
+									"Type": "NodeCodeBlockCode",
+									"Data": " .action{querySpans \"SELECT * FROM spans LIMIT ?\" \"3\"}\n"
+								},
+								{
+									"Type": "NodeCodeBlockFenceCloseMarker",
+									"Data": "```"
+								}
+							]
+						}
+					]
+				},
+				{
+					"ID": "20241213215009-qrtc56j",
+					"Type": "NodeListItem",
+					"ListData": {
+						"BulletChar": 42,
+						"Marker": "Kg=="
+					},
+					"Properties": {
+						"id": "20241213215009-qrtc56j",
+						"updated": "20241213215009"
+					},
+					"Children": [
+						{
+							"ID": "20241213215009-fev1gao",
+							"Type": "NodeParagraph",
+							"Properties": {
+								"id": "20241213215009-fev1gao",
+								"updated": "20241213215617"
+							},
+							"Children": [
+								{
+									"Type": "NodeText",
+									"Data": "​"
+								},
+								{
+									"Type": "NodeTextMark",
+									"TextMarkType": "code",
+									"TextMarkTextContent": "querySQL"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "​: この関数は"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "データベース"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "へのクエリに使用され、戻り値は結果セットです"
+								}
+							]
+						},
+						{
+							"ID": "20241213215633-69ltmv1",
+							"Type": "NodeCodeBlock",
+							"IsFencedCodeBlock": true,
+							"Properties": {
+								"id": "20241213215633-69ltmv1",
+								"style": "line-height: 22px;",
+								"updated": "20241213215633"
+							},
+							"Children": [
+								{
+									"Type": "NodeCodeBlockFenceOpenMarker",
+									"Data": "```"
+								},
+								{
+									"Type": "NodeCodeBlockFenceInfoMarker"
+								},
+								{
+									"Type": "NodeCodeBlockCode",
+									"Data": " .action{querySQL \"SELECT * FROM refs LIMIT 3\"}\n"
+								},
+								{
+									"Type": "NodeCodeBlockFenceCloseMarker",
+									"Data": "```"
+								}
+							]
+						}
+					]
+				},
+				{
+					"ID": "20241212102033-rn9u6t8",
+					"Type": "NodeListItem",
+					"ListData": {
+						"BulletChar": 42,
+						"Marker": "Kg=="
+					},
+					"Properties": {
+						"id": "20241212102033-rn9u6t8",
+						"updated": "20241213215720"
+					},
+					"Children": [
+						{
+							"ID": "20241212102033-d4azb7k",
+							"Type": "NodeParagraph",
+							"Properties": {
+								"id": "20241212102033-d4azb7k",
+								"updated": "20241212163936"
+							},
+							"Children": [
+								{
+									"Type": "NodeText",
+									"Data": "​"
+								},
+								{
+									"Type": "NodeTextMark",
+									"TextMarkType": "code",
+									"TextMarkTextContent": "statBlock"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "​：この関数はブロックの内容を数えるために使用されます"
+								}
+							]
+						},
+						{
+							"ID": "20241213215720-ueqpsna",
+							"Type": "NodeCodeBlock",
+							"IsFencedCodeBlock": true,
+							"Properties": {
+								"id": "20241213215720-ueqpsna",
+								"style": "line-height: 22px;",
+								"updated": "20241213215720"
+							},
+							"Children": [
+								{
+									"Type": "NodeCodeBlockFenceOpenMarker",
+									"Data": "```"
+								},
+								{
+									"Type": "NodeCodeBlockFenceInfoMarker"
+								},
+								{
+									"Type": "NodeCodeBlockCode",
+									"Data": ".action{ (statBlock .id).RuneCount} .action{ (statBlock .id).WordCount}\n"
+								},
+								{
+									"Type": "NodeCodeBlockFenceCloseMarker",
+									"Data": "```"
+								}
+							]
+						},
+						{
+							"ID": "20241212102033-ib8fdwx",
+							"Type": "NodeList",
+							"ListData": {},
+							"Properties": {
+								"id": "20241212102033-ib8fdwx",
+								"updated": "20241212102033"
+							},
+							"Children": [
+								{
+									"ID": "20241212102033-lijk8pe",
+									"Type": "NodeListItem",
+									"ListData": {
+										"BulletChar": 42,
+										"Marker": "Kg=="
+									},
+									"Properties": {
+										"id": "20241212102033-lijk8pe",
+										"updated": "20241212102033"
+									},
+									"Children": [
+										{
+											"ID": "20241212102033-ch66lvd",
+											"Type": "NodeParagraph",
+											"Properties": {
+												"id": "20241212102033-ch66lvd",
+												"updated": "20241212102033"
+											},
+											"Children": [
+												{
+													"Type": "NodeText",
+													"Data": "RuneCount"
+												}
+											]
+										}
+									]
+								},
+								{
+									"ID": "20241212102033-527kxt0",
+									"Type": "NodeListItem",
+									"ListData": {
+										"BulletChar": 42,
+										"Marker": "Kg=="
+									},
+									"Properties": {
+										"id": "20241212102033-527kxt0",
+										"updated": "20241212102033"
+									},
+									"Children": [
+										{
+											"ID": "20241212102033-7iop2es",
+											"Type": "NodeParagraph",
+											"Properties": {
+												"id": "20241212102033-7iop2es",
+												"updated": "20241212102033"
+											},
+											"Children": [
+												{
+													"Type": "NodeText",
+													"Data": "WordCount"
+												}
+											]
+										}
+									]
+								},
+								{
+									"ID": "20241212102033-zicftlk",
+									"Type": "NodeListItem",
+									"ListData": {
+										"BulletChar": 42,
+										"Marker": "Kg=="
+									},
+									"Properties": {
+										"id": "20241212102033-zicftlk",
+										"updated": "20241212102033"
+									},
+									"Children": [
+										{
+											"ID": "20241212102033-871ju7g",
+											"Type": "NodeParagraph",
+											"Properties": {
+												"id": "20241212102033-871ju7g",
+												"updated": "20241212102033"
+											},
+											"Children": [
+												{
+													"Type": "NodeText",
+													"Data": "LinkCount"
+												}
+											]
+										}
+									]
+								},
+								{
+									"ID": "20241212102033-2k2gz3h",
+									"Type": "NodeListItem",
+									"ListData": {
+										"BulletChar": 42,
+										"Marker": "Kg=="
+									},
+									"Properties": {
+										"id": "20241212102033-2k2gz3h",
+										"updated": "20241212102033"
+									},
+									"Children": [
+										{
+											"ID": "20241212102033-1ss2d9y",
+											"Type": "NodeParagraph",
+											"Properties": {
+												"id": "20241212102033-1ss2d9y",
+												"updated": "20241212102033"
+											},
+											"Children": [
+												{
+													"Type": "NodeText",
+													"Data": "ImageCount"
+												}
+											]
+										}
+									]
+								},
+								{
+									"ID": "20241212102033-905g5ga",
+									"Type": "NodeListItem",
+									"ListData": {
+										"BulletChar": 42,
+										"Marker": "Kg=="
+									},
+									"Properties": {
+										"id": "20241212102033-905g5ga",
+										"updated": "20241212102033"
+									},
+									"Children": [
+										{
+											"ID": "20241212102033-k7jgqz4",
+											"Type": "NodeParagraph",
+											"Properties": {
+												"id": "20241212102033-k7jgqz4",
+												"updated": "20241212102033"
+											},
+											"Children": [
+												{
+													"Type": "NodeText",
+													"Data": "RefCount"
+												}
+											]
+										}
+									]
+								},
+								{
+									"ID": "20241212102033-xbpy9ew",
+									"Type": "NodeListItem",
+									"ListData": {
+										"BulletChar": 42,
+										"Marker": "Kg=="
+									},
+									"Properties": {
+										"id": "20241212102033-xbpy9ew",
+										"updated": "20241212102033"
+									},
+									"Children": [
+										{
+											"ID": "20241212102033-kvquhrn",
+											"Type": "NodeParagraph",
+											"Properties": {
+												"id": "20241212102033-kvquhrn",
+												"updated": "20241212102033"
+											},
+											"Children": [
+												{
+													"Type": "NodeText",
+													"Data": "BlockCount"
+												}
+											]
+										}
+									]
+								}
+							]
+						}
+					]
+				},
+				{
+					"ID": "20241212163938-ewajrsj",
+					"Type": "NodeListItem",
+					"ListData": {
+						"BulletChar": 42,
+						"Marker": "Kg=="
+					},
+					"Properties": {
+						"id": "20241212163938-ewajrsj",
+						"updated": "20241212163955"
+					},
+					"Children": [
+						{
+							"ID": "20241212163938-y1al3b9",
+							"Type": "NodeParagraph",
+							"Properties": {
+								"id": "20241212163938-y1al3b9",
+								"updated": "20241225192824"
+							},
+							"Children": [
+								{
+									"Type": "NodeText",
+									"Data": "​"
+								},
+								{
+									"Type": "NodeTextMark",
+									"TextMarkType": "code",
+									"TextMarkTextContent": "runeCount"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "​: この関数は文字列内の文字数を返すために使用されます"
+								}
+							]
+						}
+					]
+				},
+				{
+					"ID": "20241225192825-vi77q0u",
+					"Type": "NodeListItem",
+					"ListData": {
+						"BulletChar": 42,
+						"Marker": "Kg=="
+					},
+					"Properties": {
+						"id": "20241225192825-vi77q0u",
+						"updated": "20241225192831"
+					},
+					"Children": [
+						{
+							"ID": "20241225192825-uicespl",
+							"Type": "NodeParagraph",
+							"Properties": {
+								"id": "20241225192825-uicespl",
+								"updated": "20241225192831"
+							},
+							"Children": [
+								{
+									"Type": "NodeText",
+									"Data": "​"
+								},
+								{
+									"Type": "NodeTextMark",
+									"TextMarkType": "code",
+									"TextMarkTextContent": "wordCount"
+								},
+								{
+									"Type": "NodeText",
+									"Data": "​：この関数は文字列内の単語数を返すために使用されます"
 								}
 							]
 						}
@@ -481,7 +964,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-ni4zyd6",
 						"id": "20240530101000-xhrxvp5",
 						"updated": "20240530101000"
 					},
@@ -490,7 +972,6 @@
 							"ID": "20240530101000-wuj9ay8",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-v8ufsw4",
 								"id": "20240530101000-wuj9ay8",
 								"updated": "20240530101000"
 							},
@@ -529,7 +1010,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-ujpc1ih",
 						"id": "20240530101000-kh0a938",
 						"updated": "20240530101000"
 					},
@@ -538,7 +1018,6 @@
 							"ID": "20240530101000-mvxsseo",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-u0uemri",
 								"id": "20240530101000-mvxsseo",
 								"updated": "20240530101000"
 							},
@@ -577,7 +1056,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-9bz5ngu",
 						"id": "20240530101000-tri1ybg",
 						"updated": "20240530101000"
 					},
@@ -586,7 +1064,6 @@
 							"ID": "20240530101000-trzydfr",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-fn9kv8j",
 								"id": "20240530101000-trzydfr",
 								"updated": "20240530101000"
 							},
@@ -625,7 +1102,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-f17uw81",
 						"id": "20240530101000-5mr7f95",
 						"updated": "20240530101000"
 					},
@@ -634,7 +1110,6 @@
 							"ID": "20240530101000-5zpnush",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-45l6xix",
 								"id": "20240530101000-5zpnush",
 								"updated": "20240530101000"
 							},
@@ -673,7 +1148,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-f1u2elm",
 						"id": "20240530101000-28r34vb",
 						"updated": "20240530101000"
 					},
@@ -682,7 +1156,6 @@
 							"ID": "20240530101000-ktm1kij",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-mkp0v1z",
 								"id": "20240530101000-ktm1kij",
 								"updated": "20240530101000"
 							},
@@ -712,7 +1185,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-01lhhyb",
 						"id": "20240530101000-q2rf0ys",
 						"updated": "20240530101000"
 					},
@@ -721,7 +1193,6 @@
 							"ID": "20240530101000-iom0qak",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-369vzsi",
 								"id": "20240530101000-iom0qak",
 								"updated": "20240530101000"
 							},
@@ -751,7 +1222,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-udul0o2",
 						"id": "20240530101000-w5jc0fz",
 						"updated": "20240530101000"
 					},
@@ -760,7 +1230,6 @@
 							"ID": "20240530101000-eymmw85",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-nlrkgky",
 								"id": "20240530101000-eymmw85",
 								"updated": "20240530101000"
 							},
@@ -790,7 +1259,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-a06au9l",
 						"id": "20240530101000-1ff3zeb",
 						"updated": "20240530101000"
 					},
@@ -799,7 +1267,6 @@
 							"ID": "20240530101000-6jhy040",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-42cxwgl",
 								"id": "20240530101000-6jhy040",
 								"updated": "20240530101000"
 							},
@@ -829,7 +1296,6 @@
 						"Marker": "Kg=="
 					},
 					"Properties": {
-						"ID": "20240530101000-mt5hchv",
 						"id": "20240530101000-fkeji33",
 						"updated": "20240530101000"
 					},
@@ -838,7 +1304,6 @@
 							"ID": "20240530101000-4lrarz6",
 							"Type": "NodeParagraph",
 							"Properties": {
-								"ID": "20240530101000-wtbf2te",
 								"id": "20240530101000-4lrarz6",
 								"updated": "20240530101000"
 							},
@@ -859,71 +1324,6 @@
 							]
 						}
 					]
-				}
-			]
-		},
-		{
-			"ID": "20240530101000-5twj99z",
-			"Type": "NodeParagraph",
-			"Properties": {
-				"ID": "20240530101000-p45pa4c",
-				"id": "20240530101000-5twj99z",
-				"updated": "20240530101000"
-			},
-			"Children": [
-				{
-					"Type": "NodeText",
-					"Data": "​"
-				},
-				{
-					"Type": "NodeTextMark",
-					"TextMarkType": "code",
-					"TextMarkTextContent": "queryBlocks"
-				},
-				{
-					"Type": "NodeText",
-					"Data": "​ と "
-				},
-				{
-					"Type": "NodeTextMark",
-					"TextMarkType": "code",
-					"TextMarkTextContent": "querySpans"
-				},
-				{
-					"Type": "NodeText",
-					"Data": "​ はパラメータの入力を容易にするために、SQL のプリペアドステートメントに似た可変長引数リストをサポートしています:"
-				}
-			]
-		},
-		{
-			"ID": "20240530101000-ao36z4x",
-			"Type": "NodeCodeBlock",
-			"IsFencedCodeBlock": true,
-			"Properties": {
-				"ID": "20240530101000-2pwl178",
-				"id": "20240530101000-ao36z4x",
-				"updated": "20240530101000"
-			},
-			"Children": [
-				{
-					"Type": "NodeCodeBlockFenceOpenMarker",
-					"Data": "```"
-				},
-				{
-					"Type": "NodeCodeBlockFenceInfoMarker"
-				},
-				{
-					"ID": "20240530101000-ry5jzum",
-					"Type": "NodeCodeBlockCode",
-					"Data": ".action{$today := now | date \"20060102150405\"}\n.action{$blocks :=queryBlocks \"SELECT * FROM blocks WHERE content LIKE '?' AND updated \u003e '?' LIMIT ?\" \"%foo%\" $today \"3\"}\n",
-					"Properties": {
-						"ID": "20240530101000-i3tqwi3",
-						"id": "20240530101000-ry5jzum"
-					}
-				},
-				{
-					"Type": "NodeCodeBlockFenceCloseMarker",
-					"Data": "```"
 				}
 			]
 		},

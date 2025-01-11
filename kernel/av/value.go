@@ -181,7 +181,7 @@ func (value *Value) String(format bool) string {
 
 func (value *Value) ToJSONString() string {
 	data, err := gulu.JSON.MarshalJSON(value)
-	if nil != err {
+	if err != nil {
 		return ""
 	}
 	return string(data)
@@ -189,11 +189,11 @@ func (value *Value) ToJSONString() string {
 
 func (value *Value) Clone() (ret *Value) {
 	data, err := gulu.JSON.MarshalJSON(value)
-	if nil != err {
+	if err != nil {
 		return
 	}
 	err = gulu.JSON.UnmarshalJSON(data, &ret)
-	if nil != err {
+	if err != nil {
 		return
 	}
 	return
@@ -221,6 +221,10 @@ func (value *Value) IsEdited() bool {
 }
 
 func (value *Value) IsEmpty() bool {
+	if nil == value {
+		return true
+	}
+
 	switch value.Type {
 	case KeyTypeBlock:
 		if nil == value.Block {
@@ -371,6 +375,7 @@ func (value *Value) GetValByType(typ KeyType) (ret interface{}) {
 
 type ValueBlock struct {
 	ID      string `json:"id"`
+	Icon    string `json:"icon"`
 	Content string `json:"content"`
 	Created int64  `json:"created"`
 	Updated int64  `json:"updated"`
@@ -729,6 +734,18 @@ func (r *ValueRollup) RenderContents(calc *RollupCalc, destKey *Key) {
 		}
 		if 0 < len(r.Contents) {
 			r.Contents = []*Value{{Type: KeyTypeNumber, Number: NewFormattedValueNumber(float64(countNonEmpty)/float64(len(r.Contents)), NumberFormatPercent)}}
+		}
+	case CalcOperatorPercentUniqueValues:
+		countUniqueValues := 0
+		uniqueValues := map[string]bool{}
+		for _, v := range r.Contents {
+			if _, ok := uniqueValues[v.String(true)]; !ok {
+				uniqueValues[v.String(true)] = true
+				countUniqueValues++
+			}
+		}
+		if 0 < len(r.Contents) {
+			r.Contents = []*Value{{Type: KeyTypeNumber, Number: NewFormattedValueNumber(float64(countUniqueValues)/float64(len(r.Contents)), NumberFormatPercent)}}
 		}
 	case CalcOperatorSum:
 		sum := 0.0

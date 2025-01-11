@@ -29,6 +29,7 @@ import {sendGlobalShortcut} from "./globalEvent/keydown";
 import {closeWindow} from "../window/closeWin";
 import {checkFold} from "../util/noRelyPCFunction";
 import {correctHotkey} from "./globalEvent/commonHotkey";
+import {recordBeforeResizeTop} from "../protyle/util/resize";
 
 export const onGetConfig = (isStart: boolean, app: App) => {
     correctHotkey(app);
@@ -39,6 +40,11 @@ export const onGetConfig = (isStart: boolean, app: App) => {
         port: location.port
     });
     webFrame.setZoomFactor(window.siyuan.storage[Constants.LOCAL_ZOOM]);
+    ipcRenderer.send(Constants.SIYUAN_CMD, {
+        cmd: "setTrafficLightPosition",
+        zoom: window.siyuan.storage[Constants.LOCAL_ZOOM],
+        position: Constants.SIZE_ZOOM.find((item) => item.zoom === window.siyuan.storage[Constants.LOCAL_ZOOM]).position
+    });
     /// #endif
     if (!window.siyuan.config.uiLayout || (window.siyuan.config.uiLayout && !window.siyuan.config.uiLayout.left)) {
         window.siyuan.config.uiLayout = Constants.SIYUAN_EMPTY_LAYOUT;
@@ -67,12 +73,18 @@ export const onGetConfig = (isStart: boolean, app: App) => {
     setInlineStyle();
     renderSnippet();
     let resizeTimeout = 0;
+    let firstResize = true;
     window.addEventListener("resize", () => {
+        if (firstResize) {
+            recordBeforeResizeTop();
+            firstResize = false;
+        }
         window.clearTimeout(resizeTimeout);
         resizeTimeout = window.setTimeout(() => {
             adjustLayout();
             resizeTabs();
             resizeTopBar();
+            firstResize = true;
         }, 200);
     });
     addGA();
@@ -230,6 +242,9 @@ export const initWindow = async (app: App) => {
         });
     }
     ipcRenderer.on(Constants.SIYUAN_OPEN_FILE, (event, data) => {
+        if (!data.app) {
+            data.app = app;
+        }
         openFile(data);
     });
     ipcRenderer.on(Constants.SIYUAN_SAVE_CLOSE, (event, close) => {
@@ -289,7 +304,7 @@ ${response.data.replace("%pages", "<span class=totalPages></span>").replace("%pa
                 webContentsId: ipcData.webContentsId
             });
             const savePath = ipcData.filePaths[0];
-            let pdfFilePath  = path.join(savePath, replaceLocalPath(ipcData.rootTitle) + ".pdf");
+            let pdfFilePath = path.join(savePath, replaceLocalPath(ipcData.rootTitle) + ".pdf");
             const responseUnique = await fetchSyncPost("/api/file/getUniqueFilename", {path: pdfFilePath});
             pdfFilePath = responseUnique.data.path;
             fetchPost("/api/export/exportHTML", {
@@ -307,34 +322,41 @@ ${response.data.replace("%pages", "<span class=totalPages></span>").replace("%pa
                     path: pdfFilePath,
                     removeAssets: ipcData.removeAssets,
                     watermark: ipcData.watermark
-                }, () => {
+                }, async () => {
                     afterExport(pdfFilePath, msgId);
                     if (ipcData.removeAssets) {
                         const removePromise = (dir: string) => {
                             return new Promise(function (resolve) {
-                                //先读文件夹
                                 fs.stat(dir, function (err, stat) {
-                                    if (stat) {
-                                        if (stat.isDirectory()) {
-                                            fs.readdir(dir, function (err, files) {
-                                                files = files.map(file => path.join(dir, file)); // a/b  a/m
-                                                Promise.all(files.map(file => removePromise(file))).then(function () {
-                                                    fs.rmdir(dir, resolve);
-                                                });
+                                    if (!stat) {
+                                        return;
+                                    }
+
+                                    if (stat.isDirectory()) {
+                                        fs.readdir(dir, function (err, files) {
+                                            files = files.map(file => path.join(dir, file)); // a/b  a/m
+                                            Promise.all(files.map(file => removePromise(file))).then(function () {
+                                                fs.rm(dir, resolve);
                                             });
-                                        } else {
-                                            fs.unlink(dir, resolve);
-                                        }
+                                        });
+                                    } else {
+                                        fs.unlink(dir, resolve);
                                     }
                                 });
                             });
                         };
-                        removePromise(path.join(savePath, "assets"));
+
+                        const assetsDir = path.join(savePath, "assets");
+                        await removePromise(assetsDir);
+                        if (1 > fs.readdirSync(assetsDir).length) {
+                            fs.rmdirSync(assetsDir);
+                        }
                     }
                 });
             });
         } catch (e) {
-            showMessage("Export PDF failed: " + e, 0, "error", msgId);
+            console.error(e);
+            showMessage(window.siyuan.languages.exportPDFLowMemory, 0, "error", msgId);
             ipcRenderer.send(Constants.SIYUAN_CMD, {cmd: "destroy", webContentsId: ipcData.webContentsId});
         }
         ipcRenderer.send(Constants.SIYUAN_CMD, {cmd: "hide", webContentsId: ipcData.webContentsId});

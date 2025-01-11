@@ -1,5 +1,6 @@
 # Binaries for programs and plugins
 *.exe
+!app/elevator/elevator-*.exe
 *.dll
 *.so
 *.dylib
@@ -11,6 +12,7 @@
 app/node_modules
 app/stage/build
 app/build
+app/src/types/dist
 app/kernel*
 ios
 pprof

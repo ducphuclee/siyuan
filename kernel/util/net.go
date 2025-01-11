@@ -20,6 +20,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -58,7 +59,7 @@ func IsLocalHostname(hostname string) bool {
 }
 
 func IsLocalHost(host string) bool {
-	if hostname, _, err := net.SplitHostPort(strings.TrimSpace(host)); nil != err {
+	if hostname, _, err := net.SplitHostPort(strings.TrimSpace(host)); err != nil {
 		return false
 	} else {
 		return IsLocalHostname(hostname)
@@ -66,24 +67,29 @@ func IsLocalHost(host string) bool {
 }
 
 func IsLocalOrigin(origin string) bool {
-	if url, err := url.Parse(origin); nil == err {
+	if url, err := url.Parse(origin); err == nil {
 		return IsLocalHostname(url.Hostname())
 	}
 	return false
 }
 
-func IsOnline(checkURL string, skipTlsVerify bool) bool {
-	_, err := url.Parse(checkURL)
-	if nil != err {
-		logging.LogWarnf("invalid check URL [%s]", checkURL)
-		return false
-	}
-
+func IsOnline(checkURL string, skipTlsVerify bool, timeout int) bool {
 	if "" == checkURL {
 		return false
 	}
 
-	if isOnline(checkURL, skipTlsVerify) {
+	u, err := url.Parse(checkURL)
+	if err != nil {
+		logging.LogWarnf("invalid check URL [%s]", checkURL)
+		return false
+	}
+	if u.Scheme == "file" {
+		filePath := strings.TrimPrefix(checkURL, "file://")
+		_, err := os.Stat(filePath)
+		return err == nil
+	}
+
+	if isOnline(checkURL, skipTlsVerify, timeout) {
 		return true
 	}
 
@@ -94,7 +100,7 @@ func IsOnline(checkURL string, skipTlsVerify bool) bool {
 func IsPortOpen(port string) bool {
 	timeout := time.Second
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", port), timeout)
-	if nil != err {
+	if err != nil {
 		return false
 	}
 	if nil != conn {
@@ -104,14 +110,14 @@ func IsPortOpen(port string) bool {
 	return false
 }
 
-func isOnline(checkURL string, skipTlsVerify bool) (ret bool) {
-	c := req.C().SetTimeout(3 * time.Second)
+func isOnline(checkURL string, skipTlsVerify bool, timeout int) (ret bool) {
+	c := req.C().SetTimeout(time.Duration(timeout) * time.Millisecond)
 	if skipTlsVerify {
 		c.EnableInsecureSkipVerify()
 	}
 	c.SetUserAgent(UserAgent)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		resp, err := c.R().Get(checkURL)
 
 		if resp.GetHeader("Location") != "" {
@@ -127,7 +133,7 @@ func isOnline(checkURL string, skipTlsVerify bool) (ret bool) {
 			}
 		}
 
-		ret = nil == err
+		ret = err == nil
 		if ret {
 			break
 		}
@@ -153,7 +159,7 @@ func GetRemoteAddr(req *http.Request) string {
 
 func JsonArg(c *gin.Context, result *gulu.Result) (arg map[string]interface{}, ok bool) {
 	arg = map[string]interface{}{}
-	if err := c.BindJSON(&arg); nil != err {
+	if err := c.BindJSON(&arg); err != nil {
 		result.Code = -1
 		result.Msg = "parses request failed"
 		return
@@ -175,7 +181,7 @@ func InvalidIDPattern(idArg string, result *gulu.Result) bool {
 
 func IsValidURL(str string) bool {
 	_, err := url.Parse(str)
-	return nil == err
+	return err == nil
 }
 
 func initHttpClient() {
