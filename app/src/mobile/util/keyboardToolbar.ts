@@ -2,7 +2,8 @@ import {listIndent, listOutdent} from "../../protyle/wysiwyg/list";
 import {
     hasClosestBlock,
     hasClosestByAttribute,
-    hasClosestByClassName, hasClosestByTag,
+    hasClosestByClassName,
+    hasClosestByTag,
 } from "../../protyle/util/hasClosest";
 import {moveToDown, moveToUp} from "../../protyle/wysiwyg/move";
 import {Constants} from "../../constants";
@@ -11,7 +12,7 @@ import {getCurrentEditor} from "../editor";
 import {fontEvent, getFontNodeElements} from "../../protyle/toolbar/Font";
 import {hideElements} from "../../protyle/ui/hideElements";
 import {softEnter} from "../../protyle/wysiwyg/enter";
-import {isInAndroid} from "../../protyle/util/compatibility";
+import {isInAndroid, isInHarmony} from "../../protyle/util/compatibility";
 
 let renderKeyboardToolbarTimeout: number;
 let showUtil = false;
@@ -519,7 +520,23 @@ export const initKeyboardToolbar = () => {
     <button class="keyboard__action" data-type="done"><svg style="width: 36px"><use xlink:href="#iconKeyboardHide"></use></svg></button>
 </div>
 <div class="keyboard__util"></div>`;
-    toolbarElement.addEventListener("click", (event) => {
+    let startY = 0;
+    let startX = 0;
+    let moved = false;
+    toolbarElement.addEventListener("touchstart", e => {
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        moved = false;
+    });
+    toolbarElement.addEventListener("touchmove", e => {
+        if (Math.abs(e.touches[0].clientY - startY) > 10 || Math.abs(e.touches[0].clientX - startX) > 10) {
+            moved = true;
+        }
+    });
+    toolbarElement.addEventListener(isInAndroid() || isInHarmony() ? "touchend" : "click", (event) => {
+        if (moved) {
+            return;
+        }
         const protyle = getCurrentEditor()?.protyle;
         const target = event.target as HTMLElement;
         const slashBtnElement = hasClosestByClassName(event.target as HTMLElement, "keyboard__slash-item");
@@ -630,6 +647,9 @@ export const initKeyboardToolbar = () => {
                 const oldScrollTop = protyle.contentElement.scrollTop;
                 renderTextMenu(protyle, toolbarElement);
                 showKeyboardToolbarUtil(oldScrollTop);
+                if (window.JSAndroid && window.JSAndroid.hideKeyboard) {
+                    window.JSAndroid.hideKeyboard();
+                }
             }
             return;
         } else if (type === "moveup") {
@@ -655,6 +675,9 @@ export const initKeyboardToolbar = () => {
                 const oldScrollTop = protyle.contentElement.scrollTop;
                 renderSlashMenu(protyle, toolbarElement);
                 showKeyboardToolbarUtil(oldScrollTop);
+                if (window.JSAndroid && window.JSAndroid.hideKeyboard) {
+                    window.JSAndroid.hideKeyboard();
+                }
             }
             return;
         } else if (type === "block") {

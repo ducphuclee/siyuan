@@ -6,7 +6,6 @@ import {highlightRender} from "../protyle/render/highlightRender";
 import {exportLayout, saveLayout} from "../layout/util";
 import {Constants} from "../constants";
 /// #if !BROWSER
-import {shell} from "electron";
 import * as path from "path";
 /// #endif
 import {getFrontend, isBrowser} from "../util/functions";
@@ -19,6 +18,7 @@ import {uninstall} from "../plugin/uninstall";
 import {afterLoadPlugin, loadPlugin, loadPlugins, reloadPlugin} from "../plugin/loader";
 import {loadAssets} from "../util/assets";
 import {addScript} from "../protyle/util/addScript";
+import {useShell} from "../util/pathName";
 
 export const bazaar = {
     element: undefined as Element,
@@ -625,9 +625,9 @@ export const bazaar = {
                     /// #if !BROWSER
                     const dirName = dataObj.bazaarType;
                     if (dirName === "icons" || dirName === "themes") {
-                        shell.openPath(path.join(window.siyuan.config.system.confDir, "appearance", dirName, dataObj.name));
+                        useShell("openPath", path.join(window.siyuan.config.system.confDir, "appearance", dirName, dataObj.name));
                     } else {
-                        shell.openPath(path.join(window.siyuan.config.system.dataDir, dirName, dataObj.name));
+                        useShell("openPath", path.join(window.siyuan.config.system.dataDir, dirName, dataObj.name));
                     }
                     /// #endif
                     event.preventDefault();
@@ -756,6 +756,10 @@ export const bazaar = {
                             }, async response => {
                                 this._genMyHTML(bazaarType, app);
                                 bazaar._onBazaar(response, bazaarType, ["icons"].includes(bazaarType));
+                                // https://github.com/siyuan-note/siyuan/issues/15177
+                                if (bazaarType === "themes" && response.data.appearance?.themeVer) {
+                                    window.siyuan.config.appearance.themeVer = response.data.appearance.themeVer;
+                                }
                                 // 更新主题后不需要对该主题进行切换 https://github.com/siyuan-note/siyuan/issues/4966
                                 // https://github.com/siyuan-note/siyuan/issues/5411
                                 if (bazaarType === "themes" && (
@@ -1201,7 +1205,7 @@ export const bazaar = {
         }
         element.innerHTML = `<div class="b3-cards">${html}</div>`;
         if (reload) {
-            appearance.onSetappearance(response.data.appearance);
+            appearance.onSetAppearance(response.data.appearance);
         }
     }
 };

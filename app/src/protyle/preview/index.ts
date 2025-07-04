@@ -99,7 +99,7 @@ export class Preview {
                             openBy(linkAddress, "folder");
                         } else if (event.shiftKey) {
                             openBy(linkAddress, "app");
-                        } else if (Constants.SIYUAN_ASSETS_EXTS.includes(pathPosix().extname((linkAddress.split("?page")[0])))) {
+                        } else if (Constants.SIYUAN_ASSETS_EXTS.includes(pathPosix().extname((linkAddress).split("?")[0]))) {
                             openAsset(protyle.app, linkAddress.split("?page")[0], parseInt(getSearch("page", linkAddress)));
                         }
                         /// #endif
@@ -234,7 +234,19 @@ export class Preview {
                     }
                 });
             });
-            if(typeof  window.MathJax === "undefined") {
+            // 处理任务列表（微信公众号不能显示input[type="checkbox"]）
+            copyElement.querySelectorAll("li.protyle-task").forEach((taskItem: HTMLElement) => {
+                const checkbox = taskItem.querySelector('input[type="checkbox"]') as HTMLInputElement;
+                if (checkbox) {
+                    checkbox.style.opacity = "0";
+                    if (checkbox.checked) {
+                        taskItem.style.setProperty("list-style-type", "'✅'", "important");
+                    } else {
+                        taskItem.style.setProperty("list-style-type", "'▢'", "important");
+                    }
+                }
+            });
+            if (typeof window.MathJax === "undefined") {
                 window.MathJax = {
                     svg: {
                         fontCache: "none"
@@ -246,7 +258,7 @@ export class Preview {
             copyElement.querySelectorAll('[data-subtype="math"]').forEach(mathElement => {
                 const node = window.MathJax.tex2svg(Lute.UnEscapeHTMLStr(mathElement.getAttribute("data-content")).trim(), {display: mathElement.tagName === "DIV"});
                 node.querySelector("mjx-assistive-mml").remove();
-                mathElement.innerHTML= node.outerHTML;
+                mathElement.innerHTML = node.outerHTML;
             });
         } else if (type === "zhihu") {
             this.link2online(copyElement);
