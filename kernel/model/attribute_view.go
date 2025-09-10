@@ -199,6 +199,7 @@ func getAttrViewAddingBlockDefaultValues(attrView *av.AttributeView, view, group
 
 				if nil != keyValues.Key.Date && keyValues.Key.Date.AutoFillNow {
 					newValue.Date.Content = time.Now().UnixMilli()
+					newValue.Date.IsNotEmpty = true
 				}
 			}
 
@@ -270,6 +271,7 @@ func getAttrViewAddingBlockDefaultValues(attrView *av.AttributeView, view, group
 
 		if nil != keyValues.Key.Date && keyValues.Key.Date.AutoFillNow {
 			newValue.Date.Content = time.Now().UnixMilli()
+			newValue.Date.IsNotEmpty = true
 		}
 		return
 	}
@@ -308,6 +310,7 @@ func getAttrViewAddingBlockDefaultValues(attrView *av.AttributeView, view, group
 
 		if nil != keyValues.Key.Date && keyValues.Key.Date.AutoFillNow {
 			newValue.Date.Content = time.Now().UnixMilli()
+			newValue.Date.IsNotEmpty = true
 		}
 	}
 	return
@@ -1091,7 +1094,9 @@ func DuplicateDatabaseBlock(avID string) (newAvID, newBlockID string, err error)
 		return
 	}
 
-	newAv.Name = oldAv.Name + " (Duplicated " + time.Now().Format("2006-01-02 15:04:05") + ")"
+	if "" != newAv.Name {
+		newAv.Name = oldAv.Name + " (Duplicated " + time.Now().Format("2006-01-02 15:04:05") + ")"
+	}
 
 	for _, keyValues := range newAv.KeyValues {
 		if nil != keyValues.Key.Relation && keyValues.Key.Relation.IsTwoWay {
@@ -1465,16 +1470,16 @@ func GetBlockAttributeViewKeys(nodeID string) (ret []*BlockAttributeViewKeys) {
 		return
 	}
 
-	attrViewCache := map[string]*av.AttributeView{}
+	cachedAttrViews := map[string]*av.AttributeView{}
 	avIDs := strings.Split(avs, ",")
 	for _, avID := range avIDs {
-		attrView := attrViewCache[avID]
+		attrView := cachedAttrViews[avID]
 		if nil == attrView {
 			attrView, _ = av.ParseAttributeView(avID)
 			if nil == attrView {
 				return
 			}
-			attrViewCache[avID] = attrView
+			cachedAttrViews[avID] = attrView
 		}
 
 		if !attrView.ExistBoundBlock(nodeID) {
@@ -1572,42 +1577,7 @@ func GetBlockAttributeViewKeys(nodeID string) (ret []*BlockAttributeViewKeys) {
 
 		// 再渲染关联和汇总
 
-		rollupFurtherCollections := map[string]av.Collection{}
-		for _, kv := range keyValues {
-			if av.KeyTypeRollup != kv.Key.Type {
-				continue
-			}
-
-			relKey, _ := attrView.GetKey(kv.Key.Rollup.RelationKeyID)
-			if nil == relKey {
-				continue
-			}
-
-			destAv := attrViewCache[relKey.Relation.AvID]
-			if nil == destAv {
-				destAv, _ = av.ParseAttributeView(relKey.Relation.AvID)
-				if nil == destAv {
-					continue
-				}
-				attrViewCache[relKey.Relation.AvID] = destAv
-			}
-
-			destKey, _ := destAv.GetKey(kv.Key.Rollup.KeyID)
-			if nil == destKey {
-				continue
-			}
-			isSameAv := destAv.ID == attrView.ID
-
-			var furtherCollection av.Collection
-			if av.KeyTypeTemplate == destKey.Type || (!isSameAv && (av.KeyTypeUpdated == destKey.Type || av.KeyTypeCreated == destKey.Type)) {
-				viewable := sql.RenderView(destAv, destAv.Views[0], "")
-				if nil != viewable {
-					furtherCollection = viewable.(av.Collection)
-				}
-			}
-			rollupFurtherCollections[kv.Key.ID] = furtherCollection
-		}
-
+		rollupFurtherCollections := sql.GetFurtherCollections(attrView, cachedAttrViews)
 		for _, kv := range keyValues {
 			switch kv.Key.Type {
 			case av.KeyTypeRollup:
@@ -1622,13 +1592,13 @@ func GetBlockAttributeViewKeys(nodeID string) (ret []*BlockAttributeViewKeys) {
 
 				relVal := attrView.GetValue(kv.Key.Rollup.RelationKeyID, kv.Values[0].BlockID)
 				if nil != relVal && nil != relVal.Relation {
-					destAv := attrViewCache[relKey.Relation.AvID]
+					destAv := cachedAttrViews[relKey.Relation.AvID]
 					if nil == destAv {
 						destAv, _ = av.ParseAttributeView(relKey.Relation.AvID)
 						if nil == destAv {
 							break
 						}
-						attrViewCache[relKey.Relation.AvID] = destAv
+						cachedAttrViews[relKey.Relation.AvID] = destAv
 					}
 
 					destKey, _ := destAv.GetKey(kv.Key.Rollup.KeyID)
@@ -1642,14 +1612,14 @@ func GetBlockAttributeViewKeys(nodeID string) (ret []*BlockAttributeViewKeys) {
 					break
 				}
 
-				destAv := attrViewCache[kv.Key.Relation.AvID]
+				destAv := cachedAttrViews[kv.Key.Relation.AvID]
 				if nil == destAv {
 					destAv, _ = av.ParseAttributeView(kv.Key.Relation.AvID)
 					if nil == destAv {
 						break
 					}
 
-					attrViewCache[kv.Key.Relation.AvID] = destAv
+					cachedAttrViews[kv.Key.Relation.AvID] = destAv
 				}
 
 				blocks := map[string]*av.Value{}
@@ -2070,8 +2040,10 @@ func GetCurrentAttributeViewImages(avID, viewID, query string) (ret []string, er
 		view = attrView.GetView(attrView.ViewID)
 	}
 
+	cachedAttrViews := map[string]*av.AttributeView{}
+	rollupFurtherCollections := sql.GetFurtherCollections(attrView, cachedAttrViews)
 	table := getAttrViewTable(attrView, view, query)
-	av.Filter(table, attrView)
+	av.Filter(table, attrView, rollupFurtherCollections, cachedAttrViews)
 	av.Sort(table, attrView)
 
 	ids := map[string]bool{}
@@ -2566,6 +2538,7 @@ func (tx *Transaction) doDuplicateAttrViewView(operation *Operation) (ret *TxErr
 	for _, filter := range masterView.Filters {
 		view.Filters = append(view.Filters, &av.ViewFilter{
 			Column:        filter.Column,
+			Qualifier:     filter.Qualifier,
 			Operator:      filter.Operator,
 			Value:         filter.Value,
 			RelativeDate:  filter.RelativeDate,
@@ -3284,8 +3257,10 @@ func getNewValueByNearItem(nearItem av.Item, key *av.Key, addingBlockID string) 
 }
 
 func getNearItem(attrView *av.AttributeView, view, groupView *av.View, previousItemID string) (ret av.Item) {
+	cachedAttrViews := map[string]*av.AttributeView{}
+	rollupFurtherCollections := sql.GetFurtherCollections(attrView, cachedAttrViews)
 	viewable := sql.RenderGroupView(attrView, view, groupView, "")
-	av.Filter(viewable, attrView)
+	av.Filter(viewable, attrView, rollupFurtherCollections, cachedAttrViews)
 	av.Sort(viewable, attrView)
 	items := viewable.(av.Collection).GetItems()
 	if 0 < len(items) {
@@ -3785,10 +3760,7 @@ func sortAttributeViewRow(operation *Operation) (err error) {
 					targetGroupView.GroupItemIDs = util.InsertElem(targetGroupView.GroupItemIDs, previousIndex, itemID)
 				}
 
-				if av.KeyTypeMSelect == groupKey.Type || av.KeyTypeRelation == groupKey.Type {
-					// 跨多选分组时一个项目可能会同时存在于多个分组中，需要重新生成分组
-					regenAttrViewGroups(attrView)
-				}
+				regenAttrViewGroups(attrView)
 			} else { // 同分组内排序
 				for i, r := range groupView.GroupItemIDs {
 					if r == operation.PreviousID {

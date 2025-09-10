@@ -369,6 +369,7 @@ interface ISnippet {
     type: string;
     enabled: boolean;
     content: string;
+    disabledInPublish: boolean;
 }
 
 interface IInbox {
@@ -897,6 +898,7 @@ interface IAVGallery extends IAVView {
 interface IAVFilter {
     column: string,
     operator: TAVFilterOperator,
+    quantifier?: string,
     value: IAVCellValue,
     relativeDate?: relativeDate
     relativeDate2?: relativeDate
