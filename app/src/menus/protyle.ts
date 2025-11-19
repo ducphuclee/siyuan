@@ -1022,7 +1022,7 @@ export const zoomOut = (options: {
                 }
                 focusBlock(showElement);
                 const resizeObserver = new ResizeObserver(() => {
-                    scrollCenter(options.protyle, focusElement, true);
+                    scrollCenter(options.protyle, focusElement, "start");
                 });
                 resizeObserver.observe(options.protyle.wysiwyg.element);
                 setTimeout(() => {
@@ -2492,6 +2492,7 @@ export const setFold = (protyle: IProtyle, nodeElement: Element, isOpen?: boolea
             }
         }
         clearSelect(["img", "av"], nodeElement);
+        scrollCenter(protyle, nodeElement);
     }
     const id = nodeElement.getAttribute("data-node-id");
     const doOperations: IOperation[] = [];

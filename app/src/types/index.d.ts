@@ -71,6 +71,9 @@ type TOperation =
     | "sortAttrViewGroup"
     | "foldAttrViewGroup"
     | "setAttrViewDisplayFieldName"
+    | "setAttrViewFillColBackgroundColor"
+    | "setAttrViewUpdatedIncludeTime"
+    | "setAttrViewCreatedIncludeTime"
 type TBazaarType = "templates" | "icons" | "widgets" | "themes" | "plugins"
 type TCardType = "doc" | "notebook" | "all"
 type TEventBus = "ws-main" | "sync-start" | "sync-end" | "sync-fail" |
@@ -88,7 +91,7 @@ type TEventBus = "ws-main" | "sync-start" | "sync-end" | "sync-fail" |
     "lock-screen" |
     "mobile-keyboard-show" | "mobile-keyboard-hide" |
     "code-language-update" | "code-language-change"
-type TAVView = "table" | "gallery"
+type TAVView = "table" | "gallery" | "kanban"
 type TAVCol =
     "text"
     | "date"
@@ -563,7 +566,7 @@ interface IOperation {
     srcIDs?: string[] // removeAttrViewBlock 专享
     srcs?: IOperationSrcs[] // insertAttrViewBlock 专享
     ignoreDefaultFill?: boolean // insertAttrViewBlock 专享
-    viewID?: string // insertAttrViewBlock 专享
+    viewID?: string // 多个属性视图操作使用，用于推送时不影响其他视图
     name?: string // addAttrViewCol 专享
     type?: TAVCol // addAttrViewCol 专享
     deckID?: string // add/removeFlashcards 专享
@@ -909,6 +912,20 @@ interface IAVGallery extends IAVView {
     cardCount: number,
 }
 
+interface IAVKanban extends IAVView {
+    coverFrom: number;    // 0：无，1：内容图，2：资源字段，3：内容块
+    coverFromAssetKeyID?: string;
+    cardSize: number;   // 0：小卡片，1：中卡片，2：大卡片
+    cardAspectRatio: number;
+    displayFieldName: boolean;
+    fitImage: boolean;
+    cards: IAVGalleryItem[],
+    desc: string
+    fields: IAVColumn[]
+    cardCount: number,
+    fillColBackgroundColor: boolean
+}
+
 interface IAVFilter {
     column: string,
     operator: TAVFilterOperator,
@@ -954,6 +971,12 @@ interface IAVColumn {
     numberFormat: string,
     template: string,
     calc: IAVCalc,
+    updated?: {
+        includeTime: boolean
+    }
+    created?: {
+        includeTime: boolean
+    }
     date?: {
         autoFillNow: boolean,
         fillSpecificTime: boolean,

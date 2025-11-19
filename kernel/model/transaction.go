@@ -281,6 +281,10 @@ func performTx(tx *Transaction) (ret *TxErr) {
 				ret = tx.doSetAttrViewColDateFillCreated(op)
 			case "setAttrViewColDateFillSpecificTime":
 				ret = tx.doSetAttrViewColDateFillSpecificTime(op)
+			case "setAttrViewCreatedIncludeTime":
+				ret = tx.doSetAttrViewCreatedIncludeTime(op)
+			case "setAttrViewUpdatedIncludeTime":
+				ret = tx.doSetAttrViewUpdatedIncludeTime(op)
 			case "duplicateAttrViewKey":
 				ret = tx.doDuplicateAttrViewKey(op)
 			case "setAttrViewCoverFrom":
@@ -293,6 +297,8 @@ func performTx(tx *Transaction) (ret *TxErr) {
 				ret = tx.doSetAttrViewFitImage(op)
 			case "setAttrViewDisplayFieldName":
 				ret = tx.doSetAttrViewDisplayFieldName(op)
+			case "setAttrViewFillColBackgroundColor":
+				ret = tx.doSetAttrViewFillColBackgroundColor(op)
 			case "setAttrViewShowIcon":
 				ret = tx.doSetAttrViewShowIcon(op)
 			case "setAttrViewWrapField":
@@ -1150,6 +1156,7 @@ func (tx *Transaction) doLargeInsert(previousID string) (ret *TxErr) {
 
 		data := strings.ReplaceAll(operation.Data.(string), editor.FrontEndCaret, "")
 		subTree := tx.luteEngine.BlockDOM2Tree(data)
+		subTree.Box, subTree.Path = tree.Box, tree.Path
 		tx.processGlobalAssets(subTree)
 
 		insertedNode := subTree.Root.FirstChild
@@ -1282,6 +1289,7 @@ func (tx *Transaction) doInsert(operation *Operation) (ret *TxErr) {
 
 	data := strings.ReplaceAll(operation.Data.(string), editor.FrontEndCaret, "")
 	subTree := tx.luteEngine.BlockDOM2Tree(data)
+	subTree.Box, subTree.Path = tree.Box, tree.Path
 	tx.processGlobalAssets(subTree)
 
 	insertedNode := subTree.Root.FirstChild
