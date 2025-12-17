@@ -205,49 +205,81 @@ func GetBlockSiblingID(id string) (parent, previous, next string) {
 	if nil == current || !current.IsBlock() {
 		return
 	}
+
+	if !current.ParentIs(ast.NodeList) { // 当前块不在列表内的情况
+		parentBlock := treenode.ParentBlock(current)
+		if nil != parentBlock {
+			parent = parentBlock.ID
+			if nil != parentBlock.Previous {
+				previous = parentBlock.Previous.ID
+			}
+			if nil != parentBlock.Next {
+				next = parentBlock.Next.ID
+			}
+		}
+		return
+	}
+
+	if ast.NodeListItem != current.Type && ast.NodeList != current.Parent.Type { // 当前块是列表内的块，但不是列表项或列表的情况
+		var listParent, listParent2 *ast.Node
+		listParentCount := 0
+		for parentBlock := treenode.ParentBlock(current); nil != parentBlock; parentBlock = treenode.ParentBlock(parentBlock) {
+			if ast.NodeListItem == parentBlock.Type {
+				listParentCount++
+				if 1 < listParentCount {
+					listParent2 = parentBlock
+					break
+				}
+				listParent = parentBlock
+				continue
+			}
+		}
+
+		if 1 == listParentCount { // 列表只有一层的情况
+			if nil != listParent {
+				parent = listParent.ID
+				previous, next = getPreNext(listParent)
+			}
+			return
+		}
+
+		parent = listParent2.ID
+		previous, next = getPreNext(listParent)
+		return
+	}
+
+	if ast.NodeListItem == current.Type {
+		// 当前块是列表项的情况
+		parentBlock := treenode.ParentBlock(current)
+		if nil != parentBlock {
+			parentBlock = treenode.ParentBlock(parentBlock)
+		}
+		if nil != parentBlock {
+			parent = parentBlock.ID
+			previous, next = getPreNext(current)
+		}
+		return
+	}
+
+	// 当前块是列表的情况
 	parentBlock := treenode.ParentBlock(current)
-	if nil == parentBlock {
-		return
-	}
-
-	parent = parentBlock.ID
-	if ast.NodeDocument == parentBlock.Type {
+	if nil != parentBlock {
 		parent = parentBlock.ID
-
-		if nil != current.Previous && current.Previous.IsBlock() {
-			previous = current.Previous.ID
-			if flb := treenode.FirstChildBlock(current.Previous); nil != flb {
-				previous = flb.ID
-			}
-		}
-
-		if nil != current.Next && current.Next.IsBlock() {
-			next = current.Next.ID
-			if flb := treenode.FirstChildBlock(current.Next); nil != flb {
-				next = flb.ID
-			}
-		}
+		previous, next = getPreNext(current)
 		return
 	}
+	return
+}
 
-	for ; nil != parentBlock; parentBlock = treenode.ParentBlock(parentBlock) {
-		if nil != parentBlock.Previous && parentBlock.Previous.IsBlock() {
-			previous = parentBlock.Previous.ID
-			if flb := treenode.FirstChildBlock(parentBlock.Previous); nil != flb {
-				previous = flb.ID
-			}
-			break
+func getPreNext(parent *ast.Node) (previous, next string) {
+	if nil != parent {
+		if nil != parent.Previous {
+			previous = parent.Previous.ID
 		}
-	}
-	parentBlock = treenode.ParentBlock(current)
-	for ; nil != parentBlock; parentBlock = treenode.ParentBlock(parentBlock) {
-		if nil != parentBlock.Next && parentBlock.Next.IsBlock() {
-			next = parentBlock.Next.ID
-			if flb := treenode.FirstChildBlock(parentBlock.Next); nil != flb {
-				next = flb.ID
-			}
-			break
+		if nil != parent.Next {
+			next = parent.Next.ID
 		}
+		return
 	}
 	return
 }

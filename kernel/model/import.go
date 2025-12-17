@@ -418,10 +418,7 @@ func ImportSY(zipPath, boxID, toPath string) (err error) {
 	for _, tree := range trees {
 		util.PushEndlessProgress(Conf.language(73) + " " + fmt.Sprintf(Conf.language(70), tree.Root.IALAttr("title")))
 		syPath := filepath.Join(unzipRootPath, tree.Path)
-		if "" == tree.Root.Spec {
-			parse.NestedInlines2FlattedSpans(tree, false)
-			tree.Root.Spec = "1"
-		}
+		treenode.UpgradeSpec(tree)
 		renderer := render.NewJSONRenderer(tree, luteEngine.RenderOptions)
 		data := renderer.Render()
 
@@ -831,7 +828,8 @@ func ImportFromLocalPath(boxID, localPath string, toPath string) (err error) {
 				return nil
 			}
 
-			if !d.IsDir() && !strings.HasSuffix(currentPath, ".md") && !strings.HasSuffix(currentPath, ".markdown") {
+			if !d.IsDir() && (!strings.HasSuffix(currentPath, ".md") && !strings.HasSuffix(currentPath, ".markdown") ||
+				strings.Contains(filepath.ToSlash(currentPath), "/assets/")) {
 				// 非 Markdown 文件作为资源文件处理 https://github.com/siyuan-note/siyuan/issues/13817
 				existName := assetsDone[currentPath]
 				var name string
@@ -943,7 +941,7 @@ func ImportFromLocalPath(boxID, localPath string, toPath string) (err error) {
 			tree.Path = targetPath
 			targetPaths[curRelPath] = targetPath
 			tree.HPath = hPath
-			tree.Root.Spec = "1"
+			tree.Root.Spec = treenode.CurrentSpec
 
 			docDirLocalPath := filepath.Dir(filepath.Join(boxLocalPath, targetPath))
 			assetDirPath := getAssetsDir(boxLocalPath, docDirLocalPath)
@@ -1075,7 +1073,7 @@ func ImportFromLocalPath(boxID, localPath string, toPath string) (err error) {
 		tree.Box = boxID
 		tree.Path = targetPath
 		tree.HPath = path.Join(baseHPath, title)
-		tree.Root.Spec = "1"
+		tree.Root.Spec = treenode.CurrentSpec
 
 		docDirLocalPath := filepath.Dir(filepath.Join(boxLocalPath, targetPath))
 		assetDirPath := getAssetsDir(boxLocalPath, docDirLocalPath)

@@ -419,6 +419,14 @@ func (value *Value) SetValByType(typ KeyType, val interface{}) {
 }
 
 func (value *Value) GetValByType(typ KeyType) (ret interface{}) {
+	// 单独处理汇总
+	if KeyTypeRollup == value.Type {
+		if 1 > len(value.Rollup.Contents) {
+			return nil
+		}
+		return value.Rollup.Contents[0].GetValByType(typ)
+	}
+
 	switch typ {
 	case KeyTypeBlock:
 		return value.Block
@@ -490,6 +498,7 @@ const (
 	NumberFormatRUB NumberFormat = "RUB" // 卢布
 	NumberFormatINR NumberFormat = "INR" // 卢比
 	NumberFormatKRW NumberFormat = "KRW" // 韩元
+	NumberFormatTRY NumberFormat = "TRY" // 土耳其里拉
 	NumberFormatCAD NumberFormat = "CAD" // 加拿大元
 	NumberFormatCHF NumberFormat = "CHF" // 瑞士法郎
 	NumberFormatTHB NumberFormat = "THB" // 泰铢
@@ -562,6 +571,9 @@ func formatNumber(content float64, format NumberFormat) string {
 	case NumberFormatKRW, "won":
 		p := message.NewPrinter(language.Korean)
 		return p.Sprintf("₩%.0f", content)
+	case NumberFormatTRY, "turkishLira":
+		p := message.NewPrinter(language.Turkish)
+		return p.Sprintf("₺%.2f", content)
 	case NumberFormatCAD, "canadianDollar":
 		p := message.NewPrinter(language.English)
 		return p.Sprintf("CA$%.2f", content)
