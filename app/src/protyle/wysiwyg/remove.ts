@@ -90,15 +90,28 @@ export const removeBlock = async (protyle: IProtyle, blockElement: Element, rang
                     id: topElement.getAttribute("data-node-id"),
                 });
                 deletes.push(...foldTransaction.data.doOperations.slice(1));
-                const previousID = topElement.previousElementSibling ? topElement.previousElementSibling.getAttribute("data-node-id") : "";
                 foldTransaction.data.undoOperations.forEach((operationItem: IOperation, index: number) => {
-                    operationItem.previousID = previousID;
                     if (index > 0) {
                         operationItem.context = {
                             ignoreProcess: "true"
                         };
                     }
                 });
+                foldTransaction.data.undoOperations.reverse();
+                if (topElement.previousElementSibling &&
+                    topElement.previousElementSibling.getAttribute("data-type") === "NodeHeading" &&
+                    topElement.previousElementSibling.getAttribute("fold") === "1") {
+                    const foldId = topElement.previousElementSibling.getAttribute("data-node-id");
+                    if (!unfoldData[foldId]) {
+                        const foldTransaction = await fetchSyncPost("/api/block/getHeadingDeleteTransaction", {
+                            id: foldId,
+                        });
+                        unfoldData[foldId] = {
+                            element: topElement.previousElementSibling,
+                            previousID: foldTransaction.data.doOperations[foldTransaction.data.doOperations.length - 1].id
+                        };
+                    }
+                }
                 inserts.push(...foldTransaction.data.undoOperations);
                 // https://github.com/siyuan-note/siyuan/issues/4422
                 topElement.firstElementChild.removeAttribute("contenteditable");
@@ -110,10 +123,8 @@ export const removeBlock = async (protyle: IProtyle, blockElement: Element, rang
                 }
                 let previousID = topElement.previousElementSibling ? topElement.previousElementSibling.getAttribute("data-node-id") : "";
                 if (topElement.previousElementSibling &&
-                    topElement.previousElementSibling.getAttribute("data-type") === "NodeHeading" && topElement.previousElementSibling.getAttribute("fold") === "1" &&
-                    (topElement.nextElementSibling?.getAttribute("data-type") !== "NodeHeading" ||
-                        (topElement.nextElementSibling?.getAttribute("data-type") === "NodeHeading" && topElement.nextElementSibling?.getAttribute("data-subtype") < topElement.getAttribute("data-subtype"))
-                    )) {
+                    topElement.previousElementSibling.getAttribute("data-type") === "NodeHeading" &&
+                    topElement.previousElementSibling.getAttribute("fold") === "1") {
                     const foldId = topElement.previousElementSibling.getAttribute("data-node-id");
                     if (!unfoldData[foldId]) {
                         const foldTransaction = await fetchSyncPost("/api/block/getHeadingDeleteTransaction", {

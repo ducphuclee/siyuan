@@ -319,7 +319,7 @@ const updateEmbed = (protyle: IProtyle, operation: IOperation) => {
 };
 
 const deleteBlock = (updateElements: Element[], id: string, protyle: IProtyle, isUndo: boolean) => {
-    if (isUndo) {
+    if (isUndo && updateElements[0]) {
         focusSideBlock(updateElements[0]);
     }
     updateElements.forEach(item => {
@@ -354,6 +354,9 @@ const updateBlock = (updateElements: Element[], protyle: IProtyle, operation: IO
     });
     Array.from(protyle.wysiwyg.element.querySelectorAll(`[data-node-id="${operation.id}"]`)).find(item => {
         if (!isInEmbedBlock(item)) {
+            if (item.getAttribute("data-type") === "NodeBlockQueryEmbed") {
+                item.removeAttribute("data-render");
+            }
             updateElements[0] = item;
             return true;
         }
@@ -871,11 +874,13 @@ export const onTransaction = (protyle: IProtyle, operation: IOperation, isUndo: 
             blockRender(protyle, item);
             const wbrElement = item.querySelector("wbr");
             if (isUndo) {
-                const range = getEditorRange(item);
-                if (wbrElement) {
-                    focusByWbr(item, range);
-                } else {
-                    focusBlock(item);
+                if (operation.context?.setRange === "true") {
+                    const range = getEditorRange(item);
+                    if (wbrElement) {
+                        focusByWbr(item, range);
+                    } else {
+                        focusBlock(item);
+                    }
                 }
             } else if (wbrElement) {
                 wbrElement.remove();

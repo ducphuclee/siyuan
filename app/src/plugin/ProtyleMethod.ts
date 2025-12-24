@@ -1,17 +1,16 @@
-import { graphvizRender } from "./render/graphvizRender";
-import { highlightRender } from "./render/highlightRender";
-import { mathRender } from "./render/mathRender";
-import { mermaidRender } from "./render/mermaidRender";
-import { flowchartRender } from "./render/flowchartRender";
-import { chartRender } from "./render/chartRender";
-import { abcRender } from "./render/abcRender";
-import { htmlRender } from "./render/htmlRender";
-import { mindmapRender } from "./render/mindmapRender";
-import { plantumlRender } from "./render/plantumlRender";
-import { avRender } from "./render/av/render";
-import "../assets/scss/export.scss";
+import { graphvizRender } from "../protyle/render/graphvizRender";
+import { highlightRender } from "../protyle/render/highlightRender";
+import { mathRender } from "../protyle/render/mathRender";
+import { mermaidRender } from "../protyle/render/mermaidRender";
+import { flowchartRender } from "../protyle/render/flowchartRender";
+import { chartRender } from "../protyle/render/chartRender";
+import { abcRender } from "../protyle/render/abcRender";
+import { htmlRender } from "../protyle/render/htmlRender";
+import { mindmapRender } from "../protyle/render/mindmapRender";
+import { plantumlRender } from "../protyle/render/plantumlRender";
+import { avRender } from "../protyle/render/av/render";
 
-class Protyle {
+export class ProtyleMethod {
     /** 对 graphviz 进行渲染 */
     public static graphvizRender = graphvizRender;
     /** 为 element 中的代码块进行高亮渲染 */
@@ -33,8 +32,3 @@ class Protyle {
     public static avRender = avRender;
     public static htmlRender = htmlRender;
 }
-
-// 由于 https://github.com/siyuan-note/siyuan/issues/7800，先临时解决一下
-window.Protyle = Protyle;
-
-export default Protyle;
